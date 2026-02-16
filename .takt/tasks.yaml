@@ -1,0 +1,43 @@
+tasks:
+  - worktree: true
+    piece: default
+    issue: 1
+    auto_pr: true
+    name: task-1771240557637
+    status: failed
+    task_dir: .takt/tasks/20260216-111557-タスク指示書-タスク概要-docs-design
+    created_at: 2026-02-16T11:15:57.638Z
+    started_at: 2026-02-16T11:16:02.980Z
+    completed_at: 2026-02-16T11:16:03.071Z
+    owner_pid: null
+    failure:
+      error: >
+        Command failed: git rev-parse --abbrev-ref HEAD
+
+        fatal: ambiguous argument 'HEAD': unknown revision or path not in the
+        working tree.
+
+        Use '--' to separate paths from revisions, like this:
+
+        'git <command> [<revision>...] -- [<file>...]'
+  - worktree: true
+    piece: structural-reform
+    issue: 1
+    auto_pr: true
+    name: github-issue-1
+    status: failed
+    task_dir: .takt/tasks/20260216-111721-github-issue-1-タスク指示書
+    created_at: 2026-02-16T11:17:21.998Z
+    started_at: 2026-02-16T11:17:27.446Z
+    completed_at: 2026-02-16T11:17:27.536Z
+    owner_pid: null
+    failure:
+      error: >
+        Command failed: git rev-parse --abbrev-ref HEAD
+
+        fatal: ambiguous argument 'HEAD': unknown revision or path not in the
+        working tree.
+
+        Use '--' to separate paths from revisions, like this:
+
+        'git <command> [<revision>...] -- [<file>...]'
