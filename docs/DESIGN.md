@@ -148,7 +148,7 @@
 
 ### セキュリティ要件
 - **データ保護**
-  - Isarの暗号化機能を使用
+  - SQLCipherによるSQLiteファイルレベルの暗号化（将来対応）
   - 端末ロック時のデータ保護
 - **不正対策**
   - 習慣達成の連打防止（1日1回制限）
@@ -162,7 +162,7 @@
   - 全機能オフラインで動作（MVP）
   - 将来: クラウド同期時のオフライン対応
 - **データバックアップ**
-  - Isarの自動バックアップ機能
+  - SQLiteファイルのバックアップ（iCloud/Googleバックアップ経由）
   - エクスポート/インポート機能（将来）
 - **エラーハンドリング**
   - ユーザーフレンドリーなエラーメッセージ
@@ -189,7 +189,7 @@
 | UIコンポーネント | shadcn_flutter | latest | モダンなshadcn/uiスタイルのコンポーネント（84+） |
 | 状態管理 | flutter_riverpod | 2.x | アプリ全体の状態管理 |
 | ルーティング | go_router | 14.x | 宣言的ルーティング、Deep Link |
-| データベース | isar | 3.x | ローカルNoSQLデータベース |
+| データベース | drift | 2.x | type-safe SQLiteローカルデータベース |
 | 通知 | flutter_local_notifications | 18.x | ローカル通知 |
 | 画像選択 | image_picker | 1.x | カメラ/ギャラリーから画像選択 |
 | 課金 | in_app_purchase | 3.x | App Store / Google Play課金 |
@@ -244,7 +244,7 @@
 │       │             │             │            │
 │  ┌────▼─────┐  ┌───▼──────┐  ┌───▼──────┐     │
 │  │DataSource│  │DataSource│  │DataSource│     │
-│  │  (Isar)  │  │  (Isar)  │  │  (Isar)  │     │
+│  │  (Drift) │  │  (Drift) │  │  (Drift) │     │
 │  └──────────┘  └──────────┘  └──────────┘     │
 └────────────────────────────────────────────────┘
 ```
@@ -429,198 +429,147 @@ test/                                  # テストコード
 
 ## データ設計
 
-### Isarスキーマ定義
+### Driftスキーマ定義
 
-#### 1. Habit（習慣）
+> **Note**: 依存関係の互換性問題（`isar_generator` が `analyzer <6.0.0` のみ対応、`freezed`/`riverpod_generator` が `analyzer >=6.x` を必要とする）により、IsarからDriftに移行した。DriftはType-safeなSQLite ORM でアクティブにメンテナンスされている。
+
+#### 1. Habits テーブル（習慣）
 
 ```dart
-import 'package:isar/isar.dart';
+import 'package:drift/drift.dart';
 
-part 'habit.g.dart';
-
-@collection
-class Habit {
-  Id id = Isar.autoIncrement;
-
-  @Index()
-  late String title;
-
-  late int points;  // 付与ポイント
-
-  @enumerated
-  late FrequencyType frequencyType;  // 毎日/週n回
-
-  late int frequencyValue;  // 週n回の場合のn
-
-  DateTime? remindTime;  // リマインド時刻
-
-  late DateTime createdAt;
-
-  late bool isActive;  // 有効/無効
-
-  @Backlink(to: 'habit')
-  final logs = IsarLinks<HabitLog>();
-}
-
-enum FrequencyType {
-  daily,    // 毎日
-  weekly,   // 週n回
+class Habits extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text().withLength(min: 1, max: 50)();
+  IntColumn get points => integer()();           // 付与ポイント
+  TextColumn get frequencyType => text()();      // 'daily' or 'weekly'
+  IntColumn get frequencyValue => integer()();   // 週n回の場合のn
+  DateTimeColumn get remindTime => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 }
 ```
 
-#### 2. HabitLog（習慣達成ログ）
+#### 2. HabitLogs テーブル（習慣達成ログ）
 
 ```dart
-import 'package:isar/isar.dart';
+class HabitLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get habitId => integer().references(Habits, #id)();
+  DateTimeColumn get date => dateTime()();       // yyyy-mm-dd（時刻は00:00:00）
+  IntColumn get points => integer()();           // 獲得ポイント
+  DateTimeColumn get createdAt => dateTime()();
 
-part 'habit_log.g.dart';
-
-@collection
-class HabitLog {
-  Id id = Isar.autoIncrement;
-
-  @Index(composite: [CompositeIndex('date')])
-  late int habitId;
-
-  @Index()
-  late DateTime date;  // yyyy-mm-dd（時刻は00:00:00）
-
-  late int points;  // 獲得ポイント
-
-  late DateTime createdAt;
-
-  final habit = IsarLink<Habit>();
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {habitId, date},  // 1日1回制限の複合ユニークキー
+  ];
 }
 ```
 
-#### 3. Reward（ご褒美）
+#### 3. Rewards テーブル（ご褒美）
 
 ```dart
-import 'package:isar/isar.dart';
-
-part 'reward.g.dart';
-
-@collection
-class Reward {
-  Id id = Isar.autoIncrement;
-
-  @Index()
-  late String title;
-
-  String? imageUri;  // 画像パス
-
-  late int targetPoints;  // 必要ポイント
-
-  @enumerated
-  RewardCategory? category;
-
-  String? memo;
-
-  late DateTime createdAt;
-
-  late bool isActive;  // 有効/無効
-
-  @Backlink(to: 'reward')
-  final redemptions = IsarLinks<RewardRedemption>();
-}
-
-enum RewardCategory {
-  物品,
-  体験,
-  食事,
-  美容,
-  娯楽,
-  その他,
+class Rewards extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text().withLength(min: 1, max: 50)();
+  TextColumn get imageUri => text().nullable()(); // 画像パス
+  IntColumn get targetPoints => integer()();      // 必要ポイント
+  TextColumn get category => text().nullable()(); // 'item'/'experience'/'food'/'beauty'/'entertainment'/'other'
+  TextColumn get memo => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
 }
 ```
 
-#### 4. RewardRedemption（ご褒美交換履歴）
+#### 4. RewardRedemptions テーブル（ご褒美交換履歴）
 
 ```dart
-import 'package:isar/isar.dart';
-
-part 'reward_redemption.g.dart';
-
-@collection
-class RewardRedemption {
-  Id id = Isar.autoIncrement;
-
-  @Index()
-  late int rewardId;
-
-  late int pointsSpent;  // 消費ポイント
-
-  @Index()
-  late DateTime redeemedAt;
-
-  final reward = IsarLink<Reward>();
+class RewardRedemptions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get rewardId => integer().references(Rewards, #id)();
+  IntColumn get pointsSpent => integer()();       // 消費ポイント
+  DateTimeColumn get redeemedAt => dateTime()();
 }
 ```
 
-#### 5. Wallet（ポイント残高）
+#### 5. Wallets テーブル（ポイント残高）
 
 ```dart
-import 'package:isar/isar.dart';
-
-part 'wallet.g.dart';
-
-@collection
-class Wallet {
-  Id id = 1;  // シングルトン（常にID=1）
-
-  late int currentPoints;  // 現在のポイント残高
-
-  late DateTime updatedAt;
+class Wallets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get currentPoints => integer().withDefault(const Constant(0))();
+  DateTimeColumn get updatedAt => dateTime()();
 }
 ```
 
-#### 6. AppSettings（アプリ設定）
+#### 6. AppSettings テーブル（アプリ設定）
 
 ```dart
-import 'package:isar/isar.dart';
+class AppSettingsTable extends Table {
+  @override
+  String get tableName => 'app_settings';
 
-part 'app_settings.g.dart';
-
-@collection
-class AppSettings {
-  Id id = 1;  // シングルトン（常にID=1）
-
-  @enumerated
-  late ThemeMode themeMode;  // light/dark/system
-
-  late bool notificationsEnabled;  // 通知の有効/無効
-
-  late String locale;  // 言語設定（'ja', 'en'）
-
-  late DateTime updatedAt;
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get themeMode => text().withDefault(const Constant('system'))(); // 'light'/'dark'/'system'
+  BoolColumn get notificationsEnabled => boolean().withDefault(const Constant(true))();
+  TextColumn get locale => text().withDefault(const Constant('ja'))();
+  DateTimeColumn get updatedAt => dateTime()();
 }
 ```
 
-#### 7. PremiumStatus（プレミアム状態）
+#### 7. PremiumStatuses テーブル（プレミアム状態）
 
 ```dart
-import 'package:isar/isar.dart';
+class PremiumStatuses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  BoolColumn get isPremium => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get premiumExpiresAt => dateTime().nullable()();
+  TextColumn get purchaseToken => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime()();
+}
+```
 
-part 'premium_status.g.dart';
+#### データベース定義
 
-@collection
-class PremiumStatus {
-  Id id = 1;  // シングルトン（常にID=1）
+```dart
+// lib/core/database/app_database.dart
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
-  late bool isPremium;
+part 'app_database.g.dart';
 
-  DateTime? premiumExpiresAt;  // サブスクリプション有効期限
+@DriftDatabase(tables: [
+  Habits,
+  HabitLogs,
+  Rewards,
+  RewardRedemptions,
+  Wallets,
+  AppSettingsTable,
+  PremiumStatuses,
+])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
 
-  String? purchaseToken;  // 購入トークン
+  @override
+  int get schemaVersion => 1;
+}
 
-  late DateTime updatedAt;
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'hobica.sqlite'));
+    return NativeDatabase.createInBackground(file);
+  });
 }
 ```
 
 ### データフロー
 
 ```
-[UI] → [Provider] → [Repository] → [DataSource] → [Isar DB]
+[UI] → [Provider] → [Repository] → [DataSource] → [Drift/SQLite]
                 ↑                                      ↓
                 └─────────← [Stream/StateNotifier] ←──┘
 ```
@@ -1142,34 +1091,33 @@ Tabs(
 
 #### ローカルデータベース暗号化
 ```dart
-// Isarの暗号化設定
-final isar = await Isar.open(
-  [HabitSchema, HabitLogSchema, RewardSchema, /* ... */],
-  directory: dir.path,
-  inspector: kDebugMode,
-  // 暗号化キーの生成（端末固有のキーストアから取得）
-  encryptionKey: await _getEncryptionKey(),
-);
+// Driftでのデータベース初期化（将来: SQLCipherで暗号化対応）
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'hobica.sqlite'));
+    // 将来: NativeDatabase.createInBackground(file, setup: (db) {
+    //   db.execute("PRAGMA key = '$encryptionKey'");  // SQLCipher
+    // });
+    return NativeDatabase.createInBackground(file);
+  });
+}
 
-Future<Uint8List> _getEncryptionKey() async {
+// 暗号化キー管理（将来機能）
+Future<String> _getEncryptionKey() async {
   // flutter_secure_storageを使用
-  final storage = FlutterSecureStorage();
-  String? keyString = await storage.read(key: 'isar_encryption_key');
+  const storage = FlutterSecureStorage();
+  String? key = await storage.read(key: 'db_encryption_key');
 
-  if (keyString == null) {
-    // 新規キー生成
+  if (key == null) {
     final random = Random.secure();
-    final key = Uint8List.fromList(
-      List.generate(32, (_) => random.nextInt(256))
+    key = base64Encode(
+      Uint8List.fromList(List.generate(32, (_) => random.nextInt(256))),
     );
-    await storage.write(
-      key: 'isar_encryption_key',
-      value: base64Encode(key),
-    );
-    return key;
+    await storage.write(key: 'db_encryption_key', value: key);
   }
 
-  return base64Decode(keyString);
+  return key;
 }
 ```
 
@@ -1182,32 +1130,32 @@ Future<Uint8List> _getEncryptionKey() async {
 Future<Result<void, AppError>> completeHabit(int habitId) async {
   final today = DateTime.now().toDate(); // 時刻を00:00:00に正規化
 
-  // 既に今日達成済みかチェック
-  final existingLog = await isar.habitLogs
-    .filter()
-    .habitIdEqualTo(habitId)
-    .dateEqualTo(today)
-    .findFirst();
+  // 既に今日達成済みかチェック（UNIQUE制約でDBレベルでも保護）
+  final existingLog = await (db.select(db.habitLogs)
+    ..where((t) => t.habitId.equals(habitId) & t.date.equals(today)))
+    .getSingleOrNull();
 
   if (existingLog != null) {
     return Failure(AppError.alreadyCompleted('今日は既に達成済みです'));
   }
 
   // HabitLog作成とWallet更新をトランザクションで実行
-  await isar.writeTxn(() async {
+  await db.transaction(() async {
     // ログ作成
-    final log = HabitLog()
-      ..habitId = habitId
-      ..date = today
-      ..points = habit.points
-      ..createdAt = DateTime.now();
-    await isar.habitLogs.put(log);
+    await db.into(db.habitLogs).insert(HabitLogsCompanion.insert(
+      habitId: habitId,
+      date: today,
+      points: habit.points,
+      createdAt: DateTime.now(),
+    ));
 
     // Wallet更新
-    final wallet = await isar.wallets.get(1);
-    wallet.currentPoints += habit.points;
-    wallet.updatedAt = DateTime.now();
-    await isar.wallets.put(wallet);
+    await (db.update(db.wallets)..where((t) => t.id.equals(1))).write(
+      WalletsCompanion(
+        currentPoints: Value(currentPoints + habit.points),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   });
 
   return Success(null);
@@ -1239,11 +1187,11 @@ Future<bool> isDeviceTimeValid() async {
 
 ```dart
 Future<String> exportData() async {
-  final habits = await isar.habits.where().findAll();
-  final habitLogs = await isar.habitLogs.where().findAll();
-  final rewards = await isar.rewards.where().findAll();
-  final redemptions = await isar.rewardRedemptions.where().findAll();
-  final wallet = await isar.wallets.get(1);
+  final habits = await db.select(db.habits).get();
+  final habitLogs = await db.select(db.habitLogs).get();
+  final rewards = await db.select(db.rewards).get();
+  final redemptions = await db.select(db.rewardRedemptions).get();
+  final wallet = await (db.select(db.wallets)..where((t) => t.id.equals(1))).getSingle();
 
   final data = {
     'version': '1.0',
@@ -1263,18 +1211,25 @@ Future<String> exportData() async {
 
 ### 最適化戦略
 
-#### Isarインデックス最適化
+#### Driftインデックス最適化
 
 ```dart
-// 頻繁にクエリされるフィールドにインデックス
-@Index()
-late String title;  // タイトル検索
+// テーブル定義でインデックスを指定
+class HabitLogs extends Table {
+  // ...
+  @override
+  List<Index> get indexes => [
+    Index('habit_date_idx', [habitId, date]),  // 複合インデックス
+  ];
+}
 
-@Index()
-late DateTime date;  // 日付フィルタ
-
-@Index(composite: [CompositeIndex('date')])
-late int habitId;  // 習慣ID + 日付の複合インデックス
+class Rewards extends Table {
+  // ...
+  @override
+  List<Index> get indexes => [
+    Index('rewards_active_idx', [isActive]),   // アクティブ絞り込み用
+  ];
+}
 ```
 
 #### ページネーション（将来: 大量データ対応）
@@ -1285,12 +1240,10 @@ Future<List<HabitLog>> fetchHabitLogs({
   required int offset,
   required int limit,
 }) async {
-  return await isar.habitLogs
-    .where()
-    .sortByDateDesc()
-    .offset(offset)
-    .limit(limit)
-    .findAll();
+  return (db.select(db.habitLogs)
+    ..orderBy([(t) => OrderingTerm.desc(t.date)])
+    ..limit(limit, offset: offset))
+    .get();
 }
 ```
 
@@ -1359,7 +1312,7 @@ fvm use 3.27.0
 # 3. 依存パッケージインストール（shadcn_flutter含む）
 fvm flutter pub get
 
-# 4. コード生成（freezed, json_serializable, isar）
+# 4. コード生成（freezed, json_serializable, drift）
 fvm dart run build_runner build --delete-conflicting-outputs
 
 # 5. 実行
@@ -1505,19 +1458,20 @@ class Result<T, E> with _$Result<T, E> {
 }
 
 // 使用例
-Future<Result<Habit, AppError>> createHabit(Habit habit) async {
+Future<Result<Habit, AppError>> createHabit(HabitsCompanion companion) async {
   try {
     // バリデーション
-    if (habit.title.isEmpty) {
+    if (companion.title.value.isEmpty) {
       return Failure(AppError.validation('タイトルを入力してください'));
     }
 
     // DB保存
-    await isar.writeTxn(() async {
-      await isar.habits.put(habit);
-    });
+    final id = await db.into(db.habits).insert(companion);
+    final created = await (db.select(db.habits)
+      ..where((t) => t.id.equals(id)))
+      .getSingle();
 
-    return Success(habit);
+    return Success(created);
   } catch (e, stack) {
     logger.e('Failed to create habit', e, stack);
     return Failure(AppError.unknown('習慣の作成に失敗しました'));
@@ -1777,7 +1731,7 @@ void main() {
 
 #### ライブラリ依存
 - Riverpod: 状態管理の中核
-- Isar: ローカルDBの唯一の選択肢（変更困難）
+- Drift: type-safe SQLite ORM（`isar_generator`との`analyzer`バージョン競合により移行）
 - go_router: ルーティングの中核
 
 ### ビジネス制約
@@ -1830,14 +1784,15 @@ void main() {
 - [shadcn_flutter公式ドキュメント](https://flutter-shadcn-ui.mariuti.com/)
 - [shadcn_flutter - pub.dev](https://pub.dev/packages/shadcn_flutter)
 - [Riverpod公式ドキュメント](https://riverpod.dev)
-- [Isar公式ドキュメント](https://isar.dev)
+- [Drift公式ドキュメント](https://drift.simonbinder.eu)
 - [go_router公式ドキュメント](https://pub.dev/packages/go_router)
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2026-02-16
+**Document Version**: 1.2
+**Last Updated**: 2026-02-17
 **Status**: Draft（承認待ち）
 **更新履歴**:
+- v1.2: データベースをIsarからDriftに変更（`isar_generator`と`analyzer`のバージョン非互換問題を解消）
 - v1.1: UIフレームワークをshadcn_flutterに変更（モダンなデザインシステム採用）
 - v1.0: 初版作成
