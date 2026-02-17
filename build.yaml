@@ -1,0 +1,19 @@
+targets:
+  $default:
+    builders:
+      # Riverpod Generator
+      riverpod_generator:
+
+      # Freezed: domain/models と core/errors, core/types に限定してビルド時間を短縮
+      freezed:
+        generate_for:
+          include:
+            - lib/features/**/domain/models/**.dart
+            - lib/core/errors/**.dart
+            - lib/core/types/**.dart
+
+      # JSON Serializable: ネストオブジェクトのシリアライズ対応、nullフィールドはJSON省略
+      json_serializable:
+        options:
+          explicit_to_json: true
+          include_if_null: false
