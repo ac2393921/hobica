@@ -1,8 +1,9 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'habit.freezed.dart';
+import 'frequency_type.dart';
 
-enum FrequencyType { daily, weekly }
+part 'habit.freezed.dart';
+part 'habit.g.dart';
 
 @freezed
 class Habit with _$Habit {
@@ -12,8 +13,10 @@ class Habit with _$Habit {
     required int points,
     required FrequencyType frequencyType,
     required int frequencyValue,
-    required DateTime createdAt,
-    required bool isActive,
     DateTime? remindTime,
+    required DateTime createdAt,
+    @Default(true) bool isActive,
   }) = _Habit;
+
+  factory Habit.fromJson(Map<String, dynamic> json) => _$HabitFromJson(json);
 }

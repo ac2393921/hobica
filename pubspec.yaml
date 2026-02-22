@@ -75,7 +75,7 @@ dev_dependencies:
   drift_dev: ^2.23.1
 
   # Testing
-  mockito: ^5.4.4
+  mockito: ^5.4.5
   integration_test:
     sdk: flutter
 

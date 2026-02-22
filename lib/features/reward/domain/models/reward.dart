@@ -1,19 +1,22 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'reward.freezed.dart';
+import 'reward_category.dart';
 
-enum RewardCategory { item, experience, food, beauty, entertainment, other }
+part 'reward.freezed.dart';
+part 'reward.g.dart';
 
 @freezed
 class Reward with _$Reward {
   const factory Reward({
     required int id,
     required String title,
-    required int targetPoints,
-    required DateTime createdAt,
-    required bool isActive,
     String? imageUri,
+    required int targetPoints,
     RewardCategory? category,
     String? memo,
+    required DateTime createdAt,
+    @Default(true) bool isActive,
   }) = _Reward;
+
+  factory Reward.fromJson(Map<String, dynamic> json) => _$RewardFromJson(json);
 }
