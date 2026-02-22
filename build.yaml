@@ -1,0 +1,8 @@
+# mockito の builder が analyzer 7.x と非互換のため一時的に無効化する
+# (mockito 5.4.5 は analyzer 7.6.0 と互換性がない)
+# TODO(#60): Dart SDK >=3.7.0 更新後にこのファイルを削除し mockito コード生成を再有効化する
+targets:
+  $default:
+    builders:
+      mockito|mockBuilder:
+        enabled: false
