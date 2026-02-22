@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      # mockito 5.4.5 is incompatible with analyzer 7.x at build script level.
+      # Disable the mockito codegen builder to allow freezed/riverpod generators to run.
+      # mockito is used only for hand-written test doubles in this project.
+      mockito|mockBuilder:
+        enabled: false
