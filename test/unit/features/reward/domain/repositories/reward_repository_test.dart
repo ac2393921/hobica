@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
 import 'package:hobica/features/reward/domain/models/reward.dart';
+import 'package:hobica/features/reward/domain/models/reward_category.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
 import 'package:hobica/features/reward/domain/repositories/reward_repository.dart';
 
@@ -16,41 +17,49 @@ class _FakeRewardRepository implements RewardRepository {
   Future<Reward?> fetchRewardById(int id) async => null;
 
   @override
-  Future<Reward> createReward({
+  Future<Result<Reward, AppError>> createReward({
     required String title,
     required int targetPoints,
     String? imageUri,
     RewardCategory? category,
     String? memo,
-  }) async =>
-      Reward(
-        id: 1,
-        title: title,
-        targetPoints: targetPoints,
-        imageUri: imageUri,
-        category: category,
-        memo: memo,
-        createdAt: DateTime(2026, 2, 22),
-        isActive: true,
-      );
+  }) async => Result.success(
+    Reward(
+      id: 1,
+      title: title,
+      targetPoints: targetPoints,
+      imageUri: imageUri,
+      category: category,
+      memo: memo,
+      createdAt: DateTime(2026, 2, 22),
+      isActive: true,
+    ),
+  );
 
   @override
-  Future<Reward> updateReward(Reward reward) async => reward;
+  Future<Result<Reward, AppError>> updateReward(Reward reward) async =>
+      Result.success(reward);
 
   @override
-  Future<void> deleteReward(int id) async {}
+  Future<Result<void, AppError>> deleteReward(int id) async =>
+      const Result.success(null);
 
   @override
-  Future<Result<RewardRedemption, AppError>> redeemReward(int rewardId) async {
+  Future<Result<RewardRedemption, AppError>> redeemReward(
+    int rewardId,
+    int currentPoints,
+  ) async {
     if (rewardId != _validRewardId) {
       return const Result.failure(AppError.notFound('報酬が見つかりません'));
     }
-    return Result.success(RewardRedemption(
-      id: 1,
-      rewardId: rewardId,
-      pointsSpent: 500,
-      redeemedAt: DateTime(2026, 2, 22),
-    ),);
+    return Result.success(
+      RewardRedemption(
+        id: 1,
+        rewardId: rewardId,
+        pointsSpent: 500,
+        redeemedAt: DateTime(2026, 2, 22),
+      ),
+    );
   }
 }
 
@@ -70,17 +79,22 @@ void main() {
       expect(result, isNull);
     });
 
-    test('createReward は Reward を返す', () async {
+    test('createReward は Result<Reward, AppError> を返す', () async {
       final result = await repository.createReward(
         title: 'ケーキ',
         targetPoints: 500,
       );
-      expect(result, isA<Reward>());
-      expect(result.title, 'ケーキ');
-      expect(result.targetPoints, 500);
+      expect(result, isA<Result<Reward, AppError>>());
+      result.when(
+        success: (reward) {
+          expect(reward.title, 'ケーキ');
+          expect(reward.targetPoints, 500);
+        },
+        failure: (_) => fail('Success を期待したが Failure が返った'),
+      );
     });
 
-    test('updateReward は更新後の Reward を返す', () async {
+    test('updateReward は Result<Reward, AppError> を返す', () async {
       final reward = Reward(
         id: 1,
         title: 'ケーキ',
@@ -89,24 +103,28 @@ void main() {
         isActive: true,
       );
       final result = await repository.updateReward(reward);
-      expect(result, isA<Reward>());
+      expect(result, isA<Result<Reward, AppError>>());
     });
 
-    test('deleteReward は例外なく完了する', () async {
-      await expectLater(repository.deleteReward(1), completes);
+    test('deleteReward は Result<void, AppError> を返す', () async {
+      final result = await repository.deleteReward(1);
+      expect(result, isA<Result<void, AppError>>());
     });
 
-    test('redeemReward は Result<RewardRedemption, AppError> を Success で返す', () async {
-      final result = await repository.redeemReward(1);
-      expect(result, isA<Result<RewardRedemption, AppError>>());
-      result.when(
-        success: (redemption) => expect(redemption.rewardId, 1),
-        failure: (_) => fail('Success を期待したが Failure が返った'),
-      );
-    });
+    test(
+      'redeemReward は Result<RewardRedemption, AppError> を Success で返す',
+      () async {
+        final result = await repository.redeemReward(1, 500);
+        expect(result, isA<Result<RewardRedemption, AppError>>());
+        result.when(
+          success: (redemption) => expect(redemption.rewardId, 1),
+          failure: (_) => fail('Success を期待したが Failure が返った'),
+        );
+      },
+    );
 
     test('redeemReward は存在しない ID で notFound エラーを返す', () async {
-      final result = await repository.redeemReward(999);
+      final result = await repository.redeemReward(999, 500);
       result.when(
         success: (_) => fail('Failure を期待したが Success が返った'),
         failure: (error) => expect(error, isA<NotFoundError>()),

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/features/settings/domain/models/app_settings.dart';
+import 'package:hobica/features/settings/domain/models/app_theme_mode.dart';
 import 'package:hobica/features/settings/domain/repositories/settings_repository.dart';
 
 class _FakeSettingsRepository implements SettingsRepository {
@@ -21,7 +22,7 @@ class _FakeSettingsRepository implements SettingsRepository {
   }
 
   @override
-  Future<AppSettings> updateNotificationsEnabled({required bool enabled}) async {
+  Future<AppSettings> updateNotificationEnabled({required bool enabled}) async {
     _settings = _settings.copyWith(notificationsEnabled: enabled);
     return _settings;
   }
@@ -44,8 +45,8 @@ void main() {
       expect(result.themeMode, AppThemeMode.dark);
     });
 
-    test('updateNotificationsEnabled は更新後の AppSettings を返す', () async {
-      final result = await repository.updateNotificationsEnabled(enabled: false);
+    test('updateNotificationEnabled は更新後の AppSettings を返す', () async {
+      final result = await repository.updateNotificationEnabled(enabled: false);
       expect(result, isA<AppSettings>());
       expect(result.notificationsEnabled, false);
     });

@@ -1,7 +1,10 @@
 import 'package:hobica/features/settings/domain/models/app_settings.dart';
+import 'package:hobica/features/settings/domain/models/app_theme_mode.dart';
 
-abstract class SettingsRepository {
+abstract interface class SettingsRepository {
   Future<AppSettings> getSettings();
+
   Future<AppSettings> updateThemeMode(AppThemeMode themeMode);
-  Future<AppSettings> updateNotificationsEnabled({required bool enabled});
+
+  Future<AppSettings> updateNotificationEnabled({required bool enabled});
 }

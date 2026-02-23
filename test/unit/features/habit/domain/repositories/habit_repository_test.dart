@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
+import 'package:hobica/features/habit/domain/models/frequency_type.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
 import 'package:hobica/features/habit/domain/repositories/habit_repository.dart';
@@ -16,52 +17,49 @@ class _FakeHabitRepository implements HabitRepository {
   Future<Habit?> fetchHabitById(int id) async => null;
 
   @override
-  Future<Habit> createHabit({
+  Future<Result<Habit, AppError>> createHabit({
     required String title,
     required int points,
     required FrequencyType frequencyType,
     required int frequencyValue,
     DateTime? remindTime,
-  }) async =>
-      Habit(
-        id: 1,
-        title: title,
-        points: points,
-        frequencyType: frequencyType,
-        frequencyValue: frequencyValue,
-        remindTime: remindTime,
-        createdAt: DateTime(2026, 2, 22),
-        isActive: true,
-      );
+  }) async => Result.success(
+    Habit(
+      id: 1,
+      title: title,
+      points: points,
+      frequencyType: frequencyType,
+      frequencyValue: frequencyValue,
+      remindTime: remindTime,
+      createdAt: DateTime(2026, 2, 22),
+      isActive: true,
+    ),
+  );
 
   @override
-  Future<Habit> updateHabit(Habit habit) async => habit;
+  Future<Result<Habit, AppError>> updateHabit(Habit habit) async =>
+      Result.success(habit);
 
   @override
-  Future<void> deleteHabit(int id) async {}
+  Future<Result<void, AppError>> deleteHabit(int id) async =>
+      const Result.success(null);
 
   @override
   Future<Result<HabitLog, AppError>> completeHabit(int habitId) async {
     if (_completedToday.contains(habitId)) {
-      return const Result.failure(
-        AppError.alreadyCompleted('本日は既に完了済みです'),
-      );
+      return const Result.failure(AppError.alreadyCompleted('本日は既に完了済みです'));
     }
     _completedToday.add(habitId);
-    return Result.success(HabitLog(
-      id: 1,
-      habitId: habitId,
-      date: DateTime(2026, 2, 22),
-      points: 30,
-      createdAt: DateTime(2026, 2, 22),
-    ),);
+    return Result.success(
+      HabitLog(
+        id: 1,
+        habitId: habitId,
+        date: DateTime(2026, 2, 22),
+        points: 30,
+        createdAt: DateTime(2026, 2, 22),
+      ),
+    );
   }
-
-  @override
-  Future<List<HabitLog>> fetchHabitLogs(int habitId) async => const [];
-
-  @override
-  Future<bool> isCompletedToday(int habitId) async => false;
 }
 
 void main() {
@@ -80,19 +78,24 @@ void main() {
       expect(result, isNull);
     });
 
-    test('createHabit は Habit を返す', () async {
+    test('createHabit は Result<Habit, AppError> を返す', () async {
       final result = await repository.createHabit(
         title: '読書 30分',
         points: 30,
         frequencyType: FrequencyType.daily,
         frequencyValue: 1,
       );
-      expect(result, isA<Habit>());
-      expect(result.title, '読書 30分');
-      expect(result.points, 30);
+      expect(result, isA<Result<Habit, AppError>>());
+      result.when(
+        success: (habit) {
+          expect(habit.title, '読書 30分');
+          expect(habit.points, 30);
+        },
+        failure: (_) => fail('Success を期待したが Failure が返った'),
+      );
     });
 
-    test('updateHabit は更新後の Habit を返す', () async {
+    test('updateHabit は Result<Habit, AppError> を返す', () async {
       final habit = Habit(
         id: 1,
         title: '読書',
@@ -103,11 +106,12 @@ void main() {
         isActive: true,
       );
       final result = await repository.updateHabit(habit);
-      expect(result, isA<Habit>());
+      expect(result, isA<Result<Habit, AppError>>());
     });
 
-    test('deleteHabit は例外なく完了する', () async {
-      await expectLater(repository.deleteHabit(1), completes);
+    test('deleteHabit は Result<void, AppError> を返す', () async {
+      final result = await repository.deleteHabit(1);
+      expect(result, isA<Result<void, AppError>>());
     });
 
     test('completeHabit は Result<HabitLog, AppError> を Success で返す', () async {
@@ -119,24 +123,16 @@ void main() {
       );
     });
 
-    test('completeHabit は同じ habitId を 2 回呼び出すと alreadyCompleted エラーを返す',
-        () async {
-      await repository.completeHabit(1);
-      final result = await repository.completeHabit(1);
-      result.when(
-        success: (_) => fail('Failure を期待したが Success が返った'),
-        failure: (error) => expect(error, isA<AlreadyCompletedError>()),
-      );
-    });
-
-    test('fetchHabitLogs は List<HabitLog> を返す', () async {
-      final result = await repository.fetchHabitLogs(1);
-      expect(result, isA<List<HabitLog>>());
-    });
-
-    test('isCompletedToday は bool を返す', () async {
-      final result = await repository.isCompletedToday(1);
-      expect(result, isA<bool>());
-    });
+    test(
+      'completeHabit は同じ habitId を 2 回呼び出すと alreadyCompleted エラーを返す',
+      () async {
+        await repository.completeHabit(1);
+        final result = await repository.completeHabit(1);
+        result.when(
+          success: (_) => fail('Failure を期待したが Success が返った'),
+          failure: (error) => expect(error, isA<AlreadyCompletedError>()),
+        );
+      },
+    );
   });
 }
