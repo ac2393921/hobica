@@ -189,6 +189,23 @@ void main() {
       });
     });
 
+    group('fetchHabitLogs', () {
+      test('returns empty list initially', () async {
+        final logs = await repository.fetchHabitLogs();
+
+        expect(logs, isEmpty);
+      });
+
+      test('returns logs after completeHabit', () async {
+        await repository.completeHabit(1);
+
+        final logs = await repository.fetchHabitLogs();
+
+        expect(logs.length, 1);
+        expect(logs.first.habitId, 1);
+      });
+    });
+
     group('completeHabit', () {
       test('returns failure for non-existent habitId', () async {
         final result = await repository.completeHabit(999);

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hobica/features/habit/domain/models/habit.dart';
+import 'package:hobica/features/habit/presentation/pages/habit_detail_page.dart';
+import 'package:hobica/features/habit/presentation/pages/habit_form_page.dart';
+import 'package:hobica/features/habit/presentation/pages/habit_list_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
@@ -7,9 +11,6 @@ import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart'
 import 'routes.dart';
 
 /// プレースホルダー画面
-///
-/// 後続フェーズで実際の画面実装に置き換えるまでの仮表示用ウィジェット。
-/// フェーズ4-11で各画面を実装後、builderの実装のみを変更する。
 class _PlaceholderPage extends StatelessWidget {
   const _PlaceholderPage({required this.title});
 
@@ -18,29 +19,20 @@ class _PlaceholderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
+      appBar: AppBar(title: Text(title)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.construction,
-              size: 64,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.construction, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text(title, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
               'この画面は後続フェーズで実装されます',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
             ),
           ],
         ),
@@ -52,7 +44,6 @@ class _PlaceholderPage extends StatelessWidget {
 /// ボトムナビゲーション付きシェル
 ///
 /// 5つのタブを持つボトムナビゲーションを実装。
-/// フェーズ12.2でshadcn_flutterのTabsコンポーネントに置き換え予定。
 class _ScaffoldWithNavBar extends StatelessWidget {
   const _ScaffoldWithNavBar({required this.child});
 
@@ -67,26 +58,14 @@ class _ScaffoldWithNavBar extends StatelessWidget {
         currentIndex: _calculateSelectedIndex(context),
         onTap: (index) => _onItemTapped(index, context),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'ホーム',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: '習慣',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
+          BottomNavigationBarItem(icon: Icon(Icons.check_circle), label: '習慣'),
           BottomNavigationBarItem(
             icon: Icon(Icons.card_giftcard),
             label: 'ご褒美',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: '履歴',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: '設定',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: '履歴'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
         ],
       ),
     );
@@ -134,9 +113,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.home,
               name: AppRouteNames.home,
-              builder: (context, state) => const _PlaceholderPage(
-                title: 'ホーム',
-              ),
+              builder: (context, state) => const _PlaceholderPage(title: 'ホーム'),
             ),
           ],
         ),
@@ -146,37 +123,28 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.habits,
               name: AppRouteNames.habitList,
-              builder: (context, state) => const _PlaceholderPage(
-                title: '習慣一覧',
-              ),
+              builder: (context, state) => const HabitListPage(),
               routes: [
                 // 習慣作成（newルートは:idより前に配置する必要がある）
                 GoRoute(
                   path: 'new',
                   name: AppRouteNames.habitForm,
-                  builder: (context, state) => const _PlaceholderPage(
-                    title: '習慣作成',
-                  ),
+                  builder: (context, state) => const HabitFormPage(),
                 ),
                 GoRoute(
                   path: ':${AppRouteParams.id}',
                   name: AppRouteNames.habitDetail,
-                  builder: (context, state) {
-                    final id = state.pathParameters[AppRouteParams.id]!;
-                    return _PlaceholderPage(
-                      title: '習慣詳細 (ID: $id)',
-                    );
-                  },
+                  builder: (context, state) => HabitDetailPage(
+                    habitId: int.parse(
+                      state.pathParameters[AppRouteParams.id]!,
+                    ),
+                  ),
                   routes: [
                     GoRoute(
                       path: 'edit',
                       name: AppRouteNames.habitEdit,
-                      builder: (context, state) {
-                        final id = state.pathParameters[AppRouteParams.id]!;
-                        return _PlaceholderPage(
-                          title: '習慣編集 (ID: $id)',
-                        );
-                      },
+                      builder: (context, state) =>
+                          HabitFormPage(initialHabit: state.extra as Habit?),
                     ),
                   ],
                 ),
@@ -230,9 +198,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.history,
               name: AppRouteNames.history,
-              builder: (context, state) => const _PlaceholderPage(
-                title: '履歴',
-              ),
+              builder: (context, state) => const _PlaceholderPage(title: '履歴'),
             ),
           ],
         ),
@@ -242,16 +208,13 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.settings,
               name: AppRouteNames.settings,
-              builder: (context, state) => const _PlaceholderPage(
-                title: '設定',
-              ),
+              builder: (context, state) => const _PlaceholderPage(title: '設定'),
               routes: [
                 GoRoute(
                   path: 'premium',
                   name: AppRouteNames.premium,
-                  builder: (context, state) => const _PlaceholderPage(
-                    title: 'プレミアム',
-                  ),
+                  builder: (context, state) =>
+                      const _PlaceholderPage(title: 'プレミアム'),
                 ),
               ],
             ),
@@ -261,29 +224,20 @@ final GoRouter appRouter = GoRouter(
     ),
   ],
   errorBuilder: (context, state) => Scaffold(
-    appBar: AppBar(
-      title: const Text('エラー'),
-    ),
+    appBar: AppBar(title: const Text('エラー')),
     body: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.red,
-          ),
+          const Icon(Icons.error_outline, size: 64, color: Colors.red),
           const SizedBox(height: 16),
-          Text(
-            'ページが見つかりません',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text('ページが見つかりません', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
           Text(
             state.uri.toString(),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
