@@ -45,6 +45,9 @@ class _FakeHabitRepository implements HabitRepository {
       const Result.success(null);
 
   @override
+  Future<List<HabitLog>> fetchHabitLogs() async => const [];
+
+  @override
   Future<Result<HabitLog, AppError>> completeHabit(int habitId) async {
     if (_completedToday.contains(habitId)) {
       return const Result.failure(AppError.alreadyCompleted('本日は既に完了済みです'));
@@ -71,6 +74,11 @@ void main() {
     test('fetchAllHabits は List<Habit> を返す', () async {
       final result = await repository.fetchAllHabits();
       expect(result, isA<List<Habit>>());
+    });
+
+    test('fetchHabitLogs は List<HabitLog> を返す', () async {
+      final result = await repository.fetchHabitLogs();
+      expect(result, isA<List<HabitLog>>());
     });
 
     test('fetchHabitById は存在しないIDで null を返す', () async {

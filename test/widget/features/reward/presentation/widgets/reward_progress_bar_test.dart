@@ -7,7 +7,7 @@ final _testTheme = ThemeData(
   radius: 0.5,
 );
 
-Future<void> pumpRewardProgressBar(
+Future<void> pumpProgressBar(
   WidgetTester tester, {
   required int currentPoints,
   required int targetPoints,
@@ -27,55 +27,40 @@ Future<void> pumpRewardProgressBar(
 
 void main() {
   group('RewardProgressBar', () {
-    testWidgets('should display Progress widget', (tester) async {
-      await pumpRewardProgressBar(
-        tester,
-        currentPoints: 150,
-        targetPoints: 200,
-      );
+    testWidgets('shows "あと X pt" when currentPoints < targetPoints', (
+      tester,
+    ) async {
+      await pumpProgressBar(tester, currentPoints: 100, targetPoints: 300);
 
-      expect(find.byType(Progress), findsOneWidget);
+      expect(find.text('あと 200 pt'), findsOneWidget);
     });
 
-    testWidgets('should display progress text', (tester) async {
-      await pumpRewardProgressBar(
-        tester,
-        currentPoints: 150,
-        targetPoints: 200,
-      );
-
-      expect(find.text('150/200pt'), findsOneWidget);
-    });
-
-    testWidgets('should display remaining points text when not unlocked',
-        (tester) async {
-      await pumpRewardProgressBar(
-        tester,
-        currentPoints: 150,
-        targetPoints: 200,
-      );
-
-      expect(find.text('あと50pt'), findsOneWidget);
-    });
-
-    testWidgets('should display "解禁！" when currentPoints == targetPoints',
-        (tester) async {
-      await pumpRewardProgressBar(
-        tester,
-        currentPoints: 200,
-        targetPoints: 200,
-      );
+    testWidgets('shows "解禁！" when currentPoints == targetPoints', (
+      tester,
+    ) async {
+      await pumpProgressBar(tester, currentPoints: 300, targetPoints: 300);
 
       expect(find.text('解禁！'), findsOneWidget);
     });
 
-    testWidgets('should display "解禁！" when currentPoints > targetPoints',
-        (tester) async {
-      await pumpRewardProgressBar(
-        tester,
-        currentPoints: 250,
-        targetPoints: 200,
-      );
+    testWidgets('shows "解禁！" when currentPoints > targetPoints', (
+      tester,
+    ) async {
+      await pumpProgressBar(tester, currentPoints: 500, targetPoints: 300);
+
+      expect(find.text('解禁！'), findsOneWidget);
+    });
+
+    testWidgets('shows LinearProgressIndicator', (tester) async {
+      await pumpProgressBar(tester, currentPoints: 100, targetPoints: 300);
+
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('handles targetPoints=0 without division by zero', (
+      tester,
+    ) async {
+      await pumpProgressBar(tester, currentPoints: 0, targetPoints: 0);
 
       expect(find.text('解禁！'), findsOneWidget);
     });
