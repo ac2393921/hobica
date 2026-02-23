@@ -3,6 +3,7 @@ import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
 import 'package:hobica/features/habit/domain/models/frequency_type.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
+import 'package:hobica/features/habit/domain/models/habit_log.dart';
 import 'package:hobica/mocks/fixtures.dart';
 import 'package:hobica/mocks/mock_habit_repository.dart';
 
@@ -19,10 +20,7 @@ void main() {
         final habits = await repository.fetchAllHabits();
 
         expect(habits.length, 2);
-        expect(
-          habits.map((h) => h.title),
-          containsAll(['読書 30分', 'ランニング']),
-        );
+        expect(habits.map((h) => h.title), containsAll(['読書 30分', 'ランニング']));
       });
 
       test('excludes logically deleted habits', () async {
@@ -139,8 +137,9 @@ void main() {
       });
 
       test('returns notFound error for non-existent habit', () async {
-        final nonExistent =
-            HabitFixtures.initialHabits().first.copyWith(id: 999);
+        final nonExistent = HabitFixtures.initialHabits().first.copyWith(
+          id: 999,
+        );
 
         final result = await repository.updateHabit(nonExistent);
 
@@ -187,6 +186,45 @@ void main() {
         expect(result, isA<Failure<void, AppError>>());
         final error = (result as Failure<void, AppError>).error;
         expect(error, isA<NotFoundError>());
+      });
+    });
+
+    group('completeHabit', () {
+      test('returns failure for non-existent habitId', () async {
+        final result = await repository.completeHabit(999);
+
+        expect(result, isA<Failure<HabitLog, AppError>>());
+        expect(
+          (result as Failure<HabitLog, AppError>).error,
+          isA<NotFoundError>(),
+        );
+      });
+
+      test('returns HabitLog on first completion', () async {
+        final result = await repository.completeHabit(1);
+
+        expect(result, isA<Success<HabitLog, AppError>>());
+        final log = (result as Success<HabitLog, AppError>).value;
+        expect(log.habitId, 1);
+        expect(log.points, 30);
+      });
+
+      test('returns alreadyCompleted on same-day duplicate', () async {
+        await repository.completeHabit(1);
+        final result = await repository.completeHabit(1);
+
+        expect(result, isA<Failure<HabitLog, AppError>>());
+        expect(
+          (result as Failure<HabitLog, AppError>).error,
+          isA<AlreadyCompletedError>(),
+        );
+      });
+
+      test('stores log accessible via habitLogs getter', () async {
+        await repository.completeHabit(1);
+
+        expect(repository.habitLogs.length, 1);
+        expect(repository.habitLogs.first.habitId, 1);
       });
     });
   });
