@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dart';
+import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
+import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
 
 import 'routes.dart';
 
@@ -187,36 +190,32 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.rewards,
               name: AppRouteNames.rewardList,
-              builder: (context, state) => const _PlaceholderPage(
-                title: 'ご褒美一覧',
-              ),
+              builder: (context, state) => const RewardListPage(),
               routes: [
                 // ご褒美作成（newルートは:idより前に配置する必要がある）
                 GoRoute(
                   path: 'new',
                   name: AppRouteNames.rewardForm,
-                  builder: (context, state) => const _PlaceholderPage(
-                    title: 'ご褒美作成',
-                  ),
+                  builder: (context, state) => const RewardFormPage(),
                 ),
                 GoRoute(
                   path: ':${AppRouteParams.id}',
                   name: AppRouteNames.rewardDetail,
                   builder: (context, state) {
-                    final id = state.pathParameters[AppRouteParams.id]!;
-                    return _PlaceholderPage(
-                      title: 'ご褒美詳細 (ID: $id)',
+                    final id = int.parse(
+                      state.pathParameters[AppRouteParams.id]!,
                     );
+                    return RewardDetailPage(rewardId: id);
                   },
                   routes: [
                     GoRoute(
                       path: 'edit',
                       name: AppRouteNames.rewardEdit,
                       builder: (context, state) {
-                        final id = state.pathParameters[AppRouteParams.id]!;
-                        return _PlaceholderPage(
-                          title: 'ご褒美編集 (ID: $id)',
+                        final id = int.parse(
+                          state.pathParameters[AppRouteParams.id]!,
                         );
+                        return RewardFormPage(rewardId: id);
                       },
                     ),
                   ],
