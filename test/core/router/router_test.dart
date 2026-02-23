@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hobica/core/router/router.dart';
-import 'package:hobica/core/router/routes.dart';
+import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
+import 'package:hobica/mocks/mock_habit_repository.dart';
+
+/// 習慣ルート（HabitListPage 等）は Riverpod プロバイダーを使うため、
+/// ProviderScope で appRouter を包む必要がある。
+Widget _buildTestApp({MockHabitRepository? mockRepo}) {
+  final overrides = <Override>[
+    habitRepositoryProvider.overrideWithValue(
+      mockRepo ?? MockHabitRepository(),
+    ),
+  ];
+  return ProviderScope(
+    overrides: overrides,
+    child: MaterialApp.router(routerConfig: appRouter),
+  );
+}
 
 void main() {
   group('appRouter', () {
     testWidgets('初期ロケーションがホーム画面である', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
       // 初期画面がホームであることを確認
@@ -20,11 +31,7 @@ void main() {
     });
 
     testWidgets('ホーム画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
       // プレースホルダー画面の確認（AppBarとボトムナビゲーションにも「ホーム」があるため複数存在する）
@@ -33,26 +40,22 @@ void main() {
     });
 
     testWidgets('習慣一覧画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      final mockRepo = MockHabitRepository();
+      await tester.pumpWidget(_buildTestApp(mockRepo: mockRepo));
       await tester.pumpAndSettle();
 
       // ボトムナビゲーションの習慣タブをタップ
       await tester.tap(find.text('習慣'));
       await tester.pumpAndSettle();
 
-      expect(find.text('習慣一覧'), findsAtLeastNWidgets(1));
+      // HabitListPage が表示されることを確認（AppBar title = '習慣'）
+      expect(find.text('習慣'), findsAtLeastNWidgets(1));
+      // モックデータの習慣が表示されることを確認
+      expect(find.text('読書 30分'), findsOneWidget);
     });
 
     testWidgets('ご褒美一覧画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
       // ボトムナビゲーションのご褒美タブをタップ
@@ -63,11 +66,7 @@ void main() {
     });
 
     testWidgets('履歴画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
       // ボトムナビゲーションの履歴タブをタップ
@@ -78,11 +77,7 @@ void main() {
     });
 
     testWidgets('設定画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
       // ボトムナビゲーションの設定タブをタップ
@@ -93,59 +88,47 @@ void main() {
     });
 
     testWidgets('習慣詳細画面へのナビゲーションが機能する（パスパラメータ付き）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
-
-      // 直接パスを指定してナビゲート
-      appRouter.go('/habits/123');
+      final mockRepo = MockHabitRepository();
+      await tester.pumpWidget(_buildTestApp(mockRepo: mockRepo));
       await tester.pumpAndSettle();
 
-      // プレースホルダー画面の確認
-      expect(find.byIcon(Icons.construction), findsOneWidget);
-      expect(find.textContaining('ID: 123'), findsAtLeastNWidgets(1));
+      // 有効な習慣IDでナビゲート（モックデータのID=1: 読書 30分）
+      appRouter.go('/habits/1');
+      await tester.pumpAndSettle();
+
+      // HabitDetailPage が表示されることを確認
+      expect(find.text('読書 30分'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('習慣編集画面へのナビゲーションが機能する（パスパラメータ付き）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
-
-      // 直接パスを指定してナビゲート
-      appRouter.go('/habits/123/edit');
+      final mockRepo = MockHabitRepository();
+      await tester.pumpWidget(_buildTestApp(mockRepo: mockRepo));
       await tester.pumpAndSettle();
 
-      // プレースホルダー画面の確認
-      expect(find.byIcon(Icons.construction), findsOneWidget);
-      expect(find.textContaining('ID: 123'), findsAtLeastNWidgets(1));
+      // 有効な習慣IDでナビゲート（extra=null のためフォームは作成モードで表示）
+      appRouter.go('/habits/1/edit');
+      await tester.pumpAndSettle();
+
+      // HabitFormPage が表示されることを確認
+      expect(find.text('習慣を作成'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('習慣作成画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      final mockRepo = MockHabitRepository();
+      await tester.pumpWidget(_buildTestApp(mockRepo: mockRepo));
+      await tester.pumpAndSettle();
 
       // 直接パスを指定してナビゲート
       appRouter.go('/habits/new');
       await tester.pumpAndSettle();
 
-      // プレースホルダー画面の確認
-      expect(find.byIcon(Icons.construction), findsOneWidget);
-      expect(find.text('習慣作成'), findsAtLeastNWidgets(1));
+      // HabitFormPage（作成モード）が表示されることを確認
+      expect(find.text('習慣を作成'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('ご褒美詳細画面へのナビゲーションが機能する（パスパラメータ付き）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       // 直接パスを指定してナビゲート
       appRouter.go('/rewards/456');
@@ -157,11 +140,8 @@ void main() {
     });
 
     testWidgets('ご褒美編集画面へのナビゲーションが機能する（パスパラメータ付き）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       // 直接パスを指定してナビゲート
       appRouter.go('/rewards/456/edit');
@@ -173,11 +153,8 @@ void main() {
     });
 
     testWidgets('ご褒美作成画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       // 直接パスを指定してナビゲート
       appRouter.go('/rewards/new');
@@ -189,11 +166,8 @@ void main() {
     });
 
     testWidgets('プレミアム画面へのナビゲーションが機能する', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       // 直接パスを指定してナビゲート
       appRouter.go('/settings/premium');
@@ -203,11 +177,8 @@ void main() {
     });
 
     testWidgets('不正なルートでエラー画面が表示される', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       // 存在しないルートへナビゲート
       appRouter.go('/invalid-route');
@@ -219,11 +190,8 @@ void main() {
     });
 
     testWidgets('エラー画面から「ホームに戻る」ボタンでホーム画面に戻る', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       // 存在しないルートへナビゲート
       appRouter.go('/invalid-route');
@@ -239,11 +207,7 @@ void main() {
     });
 
     testWidgets('ボトムナビゲーションが全画面で表示される', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
       // ボトムナビゲーションの存在確認
@@ -262,11 +226,8 @@ void main() {
     });
 
     testWidgets('現在のタブがハイライトされる', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      final mockRepo = MockHabitRepository();
+      await tester.pumpWidget(_buildTestApp(mockRepo: mockRepo));
       await tester.pumpAndSettle();
 
       // 初期状態（ホーム）の確認
@@ -296,27 +257,9 @@ void main() {
   });
 
   group('パスパラメータのエッジケース', () {
-    testWidgets('特殊文字を含むIDが正しく処理される（習慣）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
-
-      // URLエンコードされた文字列（スペース）
-      appRouter.go('/habits/test%20value');
-      await tester.pumpAndSettle();
-
-      // デコード後の文字列が表示されることを確認
-      expect(find.textContaining('test value'), findsAtLeastNWidgets(1));
-    });
-
     testWidgets('特殊文字を含むIDが正しく処理される（ご褒美）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       // URLエンコードされた文字列（スペース）
       appRouter.go('/rewards/reward%20test');
@@ -327,24 +270,21 @@ void main() {
     });
 
     testWidgets('数値IDが正しく処理される（習慣）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
-
-      appRouter.go('/habits/12345');
+      final mockRepo = MockHabitRepository();
+      await tester.pumpWidget(_buildTestApp(mockRepo: mockRepo));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ID: 12345'), findsAtLeastNWidgets(1));
+      // 有効な習慣ID=1でナビゲート
+      appRouter.go('/habits/1');
+      await tester.pumpAndSettle();
+
+      // HabitDetailPage が表示されることを確認
+      expect(find.text('読書 30分'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('数値IDが正しく処理される（ご褒美）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       appRouter.go('/rewards/67890');
       await tester.pumpAndSettle();
@@ -352,26 +292,9 @@ void main() {
       expect(find.textContaining('ID: 67890'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('UUIDフォーマットのIDが正しく処理される（習慣）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
-
-      const uuid = '550e8400-e29b-41d4-a716-446655440000';
-      appRouter.go('/habits/$uuid');
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('ID: $uuid'), findsAtLeastNWidgets(1));
-    });
-
     testWidgets('UUIDフォーマットのIDが正しく処理される（ご褒美）', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(
-          routerConfig: appRouter,
-        ),
-      );
+      await tester.pumpWidget(_buildTestApp());
+      await tester.pumpAndSettle();
 
       const uuid = '123e4567-e89b-12d3-a456-426614174000';
       appRouter.go('/rewards/$uuid');

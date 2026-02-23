@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hobica/features/habit/domain/models/habit.dart';
+import 'package:hobica/features/habit/presentation/pages/habit_detail_page.dart';
+import 'package:hobica/features/habit/presentation/pages/habit_form_page.dart';
+import 'package:hobica/features/habit/presentation/pages/habit_list_page.dart';
 
 import 'routes.dart';
 
 /// プレースホルダー画面
-///
-/// 後続フェーズで実際の画面実装に置き換えるまでの仮表示用ウィジェット。
-/// フェーズ4-11で各画面を実装後、builderの実装のみを変更する。
 class _PlaceholderPage extends StatelessWidget {
   const _PlaceholderPage({required this.title});
 
@@ -49,7 +50,6 @@ class _PlaceholderPage extends StatelessWidget {
 /// ボトムナビゲーション付きシェル
 ///
 /// 5つのタブを持つボトムナビゲーションを実装。
-/// フェーズ12.2でshadcn_flutterのTabsコンポーネントに置き換え予定。
 class _ScaffoldWithNavBar extends StatelessWidget {
   const _ScaffoldWithNavBar({required this.child});
 
@@ -143,37 +143,29 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.habits,
               name: AppRouteNames.habitList,
-              builder: (context, state) => const _PlaceholderPage(
-                title: '習慣一覧',
-              ),
+              builder: (context, state) => const HabitListPage(),
               routes: [
                 // 習慣作成（newルートは:idより前に配置する必要がある）
                 GoRoute(
                   path: 'new',
                   name: AppRouteNames.habitForm,
-                  builder: (context, state) => const _PlaceholderPage(
-                    title: '習慣作成',
-                  ),
+                  builder: (context, state) => const HabitFormPage(),
                 ),
                 GoRoute(
                   path: ':${AppRouteParams.id}',
                   name: AppRouteNames.habitDetail,
-                  builder: (context, state) {
-                    final id = state.pathParameters[AppRouteParams.id]!;
-                    return _PlaceholderPage(
-                      title: '習慣詳細 (ID: $id)',
-                    );
-                  },
+                  builder: (context, state) => HabitDetailPage(
+                    habitId: int.parse(
+                      state.pathParameters[AppRouteParams.id]!,
+                    ),
+                  ),
                   routes: [
                     GoRoute(
                       path: 'edit',
                       name: AppRouteNames.habitEdit,
-                      builder: (context, state) {
-                        final id = state.pathParameters[AppRouteParams.id]!;
-                        return _PlaceholderPage(
-                          title: '習慣編集 (ID: $id)',
-                        );
-                      },
+                      builder: (context, state) => HabitFormPage(
+                        initialHabit: state.extra as Habit?,
+                      ),
                     ),
                   ],
                 ),

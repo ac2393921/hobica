@@ -23,4 +23,6 @@ abstract interface class HabitRepository {
   Future<Result<void, AppError>> deleteHabit(int id);
 
   Future<Result<HabitLog, AppError>> completeHabit(int habitId);
+
+  Future<List<HabitLog>> fetchHabitLogs();
 }

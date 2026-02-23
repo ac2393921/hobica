@@ -101,6 +101,10 @@ class MockHabitRepository implements HabitRepository {
   }
 
   @override
+  Future<List<HabitLog>> fetchHabitLogs() async =>
+      List.unmodifiable(_habitLogs);
+
+  @override
   Future<Result<HabitLog, AppError>> completeHabit(int habitId) async {
     final matches = _habits.where(
       (habit) => habit.id == habitId && habit.isActive,
