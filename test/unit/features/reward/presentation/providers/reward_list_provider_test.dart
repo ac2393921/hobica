@@ -50,24 +50,26 @@ void main() {
       expect(redemption.pointsSpent, 300);
     });
 
-    test('redeemReward throws InsufficientPointsError when points insufficient',
-        () async {
-      final repo = MockRewardRepository();
-      final container = _makeContainer(repo);
-      addTearDown(container.dispose);
+    test(
+      'redeemReward throws InsufficientPointsError when points insufficient',
+      () async {
+        final repo = MockRewardRepository();
+        final container = _makeContainer(repo);
+        addTearDown(container.dispose);
 
-      await repo.createReward(title: 'ケーキ', targetPoints: 300);
-      container.invalidate(rewardListProvider);
+        await repo.createReward(title: 'ケーキ', targetPoints: 300);
+        container.invalidate(rewardListProvider);
 
-      final rewards = await container.read(rewardListProvider.future);
-      final rewardId = rewards.first.id;
+        final rewards = await container.read(rewardListProvider.future);
+        final rewardId = rewards.first.id;
 
-      expect(
-        () => container
-            .read(rewardListProvider.notifier)
-            .redeemReward(rewardId, 100),
-        throwsA(isA<InsufficientPointsError>()),
-      );
-    });
+        expect(
+          () => container
+              .read(rewardListProvider.notifier)
+              .redeemReward(rewardId, 100),
+          throwsA(isA<InsufficientPointsError>()),
+        );
+      },
+    );
   });
 }

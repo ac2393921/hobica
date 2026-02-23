@@ -42,9 +42,7 @@ class RewardCard extends StatelessWidget {
                   const SizedBox(height: _titleSpacing),
                   if (reward.category != null)
                     PrimaryBadge(
-                      child: Text(
-                        rewardCategoryLabels[reward.category!]!,
-                      ),
+                      child: Text(rewardCategoryLabels[reward.category!]!),
                     ),
                   const SizedBox(height: _titleSpacing),
                   RewardProgressBar(

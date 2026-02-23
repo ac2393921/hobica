@@ -35,10 +35,9 @@ void main() {
       final container = _makeContainer(repo);
       addTearDown(container.dispose);
 
-      await container.read(rewardFormProvider.notifier).submitCreate(
-            title: 'ケーキ',
-            targetPoints: 300,
-          );
+      await container
+          .read(rewardFormProvider.notifier)
+          .submitCreate(title: 'ケーキ', targetPoints: 300);
 
       final state = container.read(rewardFormProvider);
       expect(state.isSubmitting, isFalse);
@@ -54,16 +53,15 @@ void main() {
       addTearDown(container.dispose);
 
       // 先に作成
-      await container.read(rewardFormProvider.notifier).submitCreate(
-            title: '旧タイトル',
-            targetPoints: 100,
-          );
+      await container
+          .read(rewardFormProvider.notifier)
+          .submitCreate(title: '旧タイトル', targetPoints: 100);
       final created = container.read(rewardFormProvider).savedReward!;
 
       // 更新
-      await container.read(rewardFormProvider.notifier).submitUpdate(
-            created.copyWith(title: '新タイトル', targetPoints: 200),
-          );
+      await container
+          .read(rewardFormProvider.notifier)
+          .submitUpdate(created.copyWith(title: '新タイトル', targetPoints: 200));
 
       final state = container.read(rewardFormProvider);
       expect(state.isSubmitting, isFalse);
@@ -78,12 +76,16 @@ void main() {
       addTearDown(container.dispose);
 
       // 存在しないIDのRewardを更新
-      final fakeReward = (await repo.createReward(title: 'ghost', targetPoints: 1))
-          .when(success: (r) => r, failure: (_) => throw Exception());
+      final fakeReward = (await repo.createReward(
+        title: 'ghost',
+        targetPoints: 1,
+      )).when(success: (r) => r, failure: (_) => throw Exception());
       // リポジトリから削除
       await repo.deleteReward(fakeReward.id);
 
-      await container.read(rewardFormProvider.notifier).submitUpdate(fakeReward);
+      await container
+          .read(rewardFormProvider.notifier)
+          .submitUpdate(fakeReward);
 
       final state = container.read(rewardFormProvider);
       expect(state.isSubmitting, isFalse);

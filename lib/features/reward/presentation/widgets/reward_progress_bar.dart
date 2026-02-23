@@ -15,9 +15,8 @@ class RewardProgressBar extends StatelessWidget {
 
   bool get _isUnlocked => currentPoints >= targetPoints;
 
-  String get _statusText => _isUnlocked
-      ? '解禁！'
-      : 'あと ${targetPoints - currentPoints} pt';
+  String get _statusText =>
+      _isUnlocked ? '解禁！' : 'あと ${targetPoints - currentPoints} pt';
 
   @override
   Widget build(BuildContext context) {

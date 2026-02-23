@@ -41,28 +41,21 @@ Future<void> pumpRewardCard(
 void main() {
   group('RewardCard', () {
     testWidgets('displays reward title', (tester) async {
-      await pumpRewardCard(
-        tester,
-        reward: _baseReward,
-        currentPoints: 100,
-      );
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
 
       expect(find.text('ケーキ'), findsOneWidget);
     });
 
     testWidgets('displays category badge when category is set', (tester) async {
-      await pumpRewardCard(
-        tester,
-        reward: _baseReward,
-        currentPoints: 100,
-      );
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
 
       expect(find.text('食'), findsOneWidget);
       expect(find.byType(PrimaryBadge), findsOneWidget);
     });
 
-    testWidgets('does not display category badge when category is null',
-        (tester) async {
+    testWidgets('does not display category badge when category is null', (
+      tester,
+    ) async {
       final reward = Reward(
         id: 2,
         title: 'ギフトカード',
@@ -76,21 +69,13 @@ void main() {
     });
 
     testWidgets('displays RewardProgressBar', (tester) async {
-      await pumpRewardCard(
-        tester,
-        reward: _baseReward,
-        currentPoints: 100,
-      );
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
 
       expect(find.byType(RewardProgressBar), findsOneWidget);
     });
 
     testWidgets('shows placeholder icon when imageUri is null', (tester) async {
-      await pumpRewardCard(
-        tester,
-        reward: _baseReward,
-        currentPoints: 100,
-      );
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
 
       expect(find.byIcon(BootstrapIcons.gift), findsOneWidget);
     });
