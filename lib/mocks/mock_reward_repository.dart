@@ -50,7 +50,7 @@ class MockRewardRepository implements RewardRepository {
         AppError.notFound('Reward with id ${reward.id} not found'),
       );
     }
-    final updated = List<Reward>.from(_rewards);
+    final updated = [..._rewards];
     updated[index] = reward;
     _rewards = updated;
     return Result.success(reward);
@@ -60,11 +60,9 @@ class MockRewardRepository implements RewardRepository {
   Future<Result<void, AppError>> deleteReward(int id) async {
     final exists = _rewards.any((r) => r.id == id);
     if (!exists) {
-      return Result.failure(
-        AppError.notFound('Reward with id $id not found'),
-      );
+      return Result.failure(AppError.notFound('Reward with id $id not found'));
     }
-    _rewards = _rewards.where((r) => r.id != id).toList();
+    _rewards = _rewards.where((r) => r.id != id).toList(growable: false);
     return const Result.success(null);
   }
 
