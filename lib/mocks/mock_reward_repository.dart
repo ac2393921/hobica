@@ -6,100 +6,93 @@ import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
 import 'package:hobica/features/reward/domain/repositories/reward_repository.dart';
 
 class MockRewardRepository implements RewardRepository {
-  MockRewardRepository()
-      : _rewards = [
-          Reward(
-            id: 1,
-            title: 'コーヒー',
-            targetPoints: 100,
-            category: RewardCategory.food,
-            createdAt: DateTime(2024, 1, 1),
-          ),
-          Reward(
-            id: 2,
-            title: 'マッサージ',
-            targetPoints: 500,
-            category: RewardCategory.beauty,
-            memo: '月1回の楽しみ',
-            createdAt: DateTime(2024, 1, 2),
-          ),
-        ],
-        _nextId = 3;
+  List<Reward> _rewards = [];
+  List<RewardRedemption> _redemptions = [];
+  int _nextRewardId = 1;
+  int _nextRedemptionId = 1;
 
-  final List<Reward> _rewards;
-  int _nextId;
+  List<RewardRedemption> get redemptions => List.unmodifiable(_redemptions);
 
   @override
   Future<List<Reward>> fetchAllRewards() async => List.unmodifiable(_rewards);
 
   @override
+  Future<Reward?> fetchRewardById(int id) async {
+    return _rewards.where((r) => r.id == id).firstOrNull;
+  }
+
+  @override
   Future<Result<Reward, AppError>> createReward({
     required String title,
-    String? imageUri,
     required int targetPoints,
+    String? imageUri,
     RewardCategory? category,
     String? memo,
   }) async {
     final reward = Reward(
-      id: _nextId++,
+      id: _nextRewardId++,
       title: title,
-      imageUri: imageUri,
       targetPoints: targetPoints,
+      imageUri: imageUri,
       category: category,
       memo: memo,
       createdAt: DateTime.now(),
     );
-    _rewards.add(reward);
+    _rewards = [..._rewards, reward];
     return Result.success(reward);
   }
 
   @override
-  Future<Result<Reward, AppError>> updateReward({
-    required int id,
-    required String title,
-    String? imageUri,
-    required int targetPoints,
-    RewardCategory? category,
-    String? memo,
-    required bool isActive,
-  }) async {
-    final index = _rewards.indexWhere((r) => r.id == id);
+  Future<Result<Reward, AppError>> updateReward(Reward reward) async {
+    final index = _rewards.indexWhere((r) => r.id == reward.id);
     if (index == -1) {
-      return Result.failure(AppError.notFound('ご褒美が見つかりません'));
+      return Result.failure(
+        AppError.notFound('Reward with id ${reward.id} not found'),
+      );
     }
-    final updated = _rewards[index].copyWith(
-      title: title,
-      imageUri: imageUri,
-      targetPoints: targetPoints,
-      category: category,
-      memo: memo,
-      isActive: isActive,
-    );
-    _rewards[index] = updated;
-    return Result.success(updated);
+    final updated = [..._rewards];
+    updated[index] = reward;
+    _rewards = updated;
+    return Result.success(reward);
   }
 
   @override
   Future<Result<void, AppError>> deleteReward(int id) async {
-    _rewards.removeWhere((r) => r.id == id);
-    return const Result<void, AppError>.success(null);
+    final exists = _rewards.any((r) => r.id == id);
+    if (!exists) {
+      return Result.failure(AppError.notFound('Reward with id $id not found'));
+    }
+    _rewards = _rewards.where((r) => r.id != id).toList(growable: false);
+    return const Result.success(null);
   }
 
   @override
   Future<Result<RewardRedemption, AppError>> redeemReward(
-    int id,
-    int pointsSpent,
+    int rewardId,
+    int currentPoints,
   ) async {
-    final exists = _rewards.any((r) => r.id == id);
-    if (!exists) {
-      return Result.failure(AppError.notFound('ご褒美が見つかりません'));
+    final reward = _rewards.where((r) => r.id == rewardId).firstOrNull;
+    if (reward == null) {
+      return Result.failure(
+        AppError.notFound('Reward with id $rewardId not found'),
+      );
     }
+
+    if (currentPoints < reward.targetPoints) {
+      return Result.failure(
+        AppError.insufficientPoints(
+          'Insufficient points: need ${reward.targetPoints}, have $currentPoints',
+        ),
+      );
+    }
+
     final redemption = RewardRedemption(
-      id: _nextId++,
-      rewardId: id,
-      pointsSpent: pointsSpent,
+      id: _nextRedemptionId++,
+      rewardId: rewardId,
+      pointsSpent: reward.targetPoints,
       redeemedAt: DateTime.now(),
     );
+    _redemptions = [..._redemptions, redemption];
     return Result.success(redemption);
   }
 }

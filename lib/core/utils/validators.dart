@@ -1,7 +1,6 @@
 class Validators {
   Validators._();
 
-  /// タイトルのバリデーション（必須・1〜50文字）
   static String? validateTitle(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'タイトルを入力してください';
@@ -12,7 +11,6 @@ class Validators {
     return null;
   }
 
-  /// 付与ポイントのバリデーション（必須・1以上の整数）
   static String? validatePoints(String? value) {
     if (value == null || value.isEmpty) {
       return 'ポイントを入力してください';

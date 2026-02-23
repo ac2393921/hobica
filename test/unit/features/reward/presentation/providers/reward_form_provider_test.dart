@@ -86,7 +86,10 @@ void main() {
       test('updateCategory で category が更新される', () {
         final notifier = container.read(rewardFormProvider().notifier);
         notifier.updateCategory(RewardCategory.food);
-        expect(container.read(rewardFormProvider()).category, RewardCategory.food);
+        expect(
+          container.read(rewardFormProvider()).category,
+          RewardCategory.food,
+        );
       });
 
       test('updateMemo で memo が更新される', () {
@@ -106,7 +109,10 @@ void main() {
         expect(result, isA<Failure<Reward, AppError>>());
         final error = (result as Failure<Reward, AppError>).error;
         expect(error, isA<ValidationError>());
-        expect(container.read(rewardFormProvider()).submitError, isA<ValidationError>());
+        expect(
+          container.read(rewardFormProvider()).submitError,
+          isA<ValidationError>(),
+        );
       });
 
       test('targetPoints が不正のとき Failure(AppError.validation) を返す', () async {
@@ -157,6 +163,10 @@ void main() {
       });
 
       test('save() 成功後に rewardListProvider が invalidate される', () async {
+        final repository = container.read(rewardRepositoryProvider);
+        await repository.createReward(title: 'コーヒー', targetPoints: 100);
+        await repository.createReward(title: 'マッサージ', targetPoints: 500);
+
         // 最初にリストをキャッシュ
         final initialList = await container.read(rewardListProvider.future);
         expect(initialList, hasLength(2));
@@ -172,17 +182,15 @@ void main() {
       });
 
       test('編集モードで save() すると updateReward が呼ばれる', () async {
-        final existing = Reward(
-          id: 1,
+        final repository = MockRewardRepository();
+        final created = await repository.createReward(
           title: 'コーヒー',
           targetPoints: 100,
-          createdAt: DateTime(2024, 1, 1),
         );
+        final existing = (created as Success<Reward, AppError>).value;
 
         final editContainer = ProviderContainer(
-          overrides: [
-            rewardRepositoryProvider.overrideWith((_) => MockRewardRepository()),
-          ],
+          overrides: [rewardRepositoryProvider.overrideWith((_) => repository)],
         );
         addTearDown(editContainer.dispose);
 

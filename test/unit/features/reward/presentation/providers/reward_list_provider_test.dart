@@ -14,8 +14,10 @@ void main() {
     late ProviderContainer container;
     late MockRewardRepository mockRepository;
 
-    setUp(() {
+    setUp(() async {
       mockRepository = MockRewardRepository();
+      await mockRepository.createReward(title: 'コーヒー', targetPoints: 100);
+      await mockRepository.createReward(title: 'マッサージ', targetPoints: 500);
       container = ProviderContainer(
         overrides: [
           rewardRepositoryProvider.overrideWith((_) => mockRepository),
@@ -43,32 +45,21 @@ void main() {
     test('refresh() でデータが再取得される', () async {
       // 初回取得
       await container.read(rewardListProvider.future);
-      expect(
-        container.read(rewardListProvider).value,
-        hasLength(2),
-      );
+      expect(container.read(rewardListProvider).value, hasLength(2));
 
       // リポジトリにデータを追加してからリフレッシュ
-      await mockRepository.createReward(
-        title: 'ケーキ',
-        targetPoints: 200,
-      );
+      await mockRepository.createReward(title: 'ケーキ', targetPoints: 200);
 
       final notifier = container.read(rewardListProvider.notifier);
       await notifier.refresh();
 
-      expect(
-        container.read(rewardListProvider).value,
-        hasLength(3),
-      );
+      expect(container.read(rewardListProvider).value, hasLength(3));
     });
 
     test('RewardRepository を override して任意の実装を注入できる', () async {
       final customMock = _AlwaysEmptyRewardRepository();
       final customContainer = ProviderContainer(
-        overrides: [
-          rewardRepositoryProvider.overrideWith((_) => customMock),
-        ],
+        overrides: [rewardRepositoryProvider.overrideWith((_) => customMock)],
       );
       addTearDown(customContainer.dispose);
 
@@ -80,8 +71,10 @@ void main() {
   group('MockRewardRepository.redeemReward', () {
     late MockRewardRepository repo;
 
-    setUp(() {
+    setUp(() async {
       repo = MockRewardRepository();
+      await repo.createReward(title: 'コーヒー', targetPoints: 100);
+      await repo.createReward(title: 'マッサージ', targetPoints: 500);
     });
 
     test('存在するご褒美を使用すると RewardRedemption が返る', () async {

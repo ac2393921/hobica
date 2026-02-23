@@ -4,31 +4,26 @@ import 'package:hobica/features/reward/domain/models/reward.dart';
 import 'package:hobica/features/reward/domain/models/reward_category.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
 
-abstract class RewardRepository {
+abstract interface class RewardRepository {
   Future<List<Reward>> fetchAllRewards();
+
+  Future<Reward?> fetchRewardById(int id);
 
   Future<Result<Reward, AppError>> createReward({
     required String title,
-    String? imageUri,
     required int targetPoints,
+    String? imageUri,
     RewardCategory? category,
     String? memo,
   });
 
-  Future<Result<Reward, AppError>> updateReward({
-    required int id,
-    required String title,
-    String? imageUri,
-    required int targetPoints,
-    RewardCategory? category,
-    String? memo,
-    required bool isActive,
-  });
+  Future<Result<Reward, AppError>> updateReward(Reward reward);
 
   Future<Result<void, AppError>> deleteReward(int id);
 
+  // [currentPoints] を受け取ることで WalletRepository への依存を排除する。
   Future<Result<RewardRedemption, AppError>> redeemReward(
-    int id,
-    int pointsSpent,
+    int rewardId,
+    int currentPoints,
   );
 }

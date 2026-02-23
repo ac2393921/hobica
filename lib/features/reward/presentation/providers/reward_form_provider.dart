@@ -96,13 +96,16 @@ class RewardForm extends _$RewardForm {
       );
     } else {
       result = await repository.updateReward(
-        id: current.id,
-        title: state.title,
-        imageUri: state.imageUri,
-        targetPoints: targetPoints,
-        category: state.category,
-        memo: state.memo,
-        isActive: current.isActive,
+        current.copyWith(
+          id: current.id,
+          createdAt: current.createdAt,
+          isActive: current.isActive,
+          title: state.title,
+          imageUri: state.imageUri,
+          targetPoints: targetPoints,
+          category: state.category,
+          memo: state.memo,
+        ),
       );
     }
 
@@ -111,7 +114,8 @@ class RewardForm extends _$RewardForm {
         ref.invalidate(rewardListProvider);
         return state.copyWith(isSubmitting: false);
       },
-      failure: (error) => state.copyWith(isSubmitting: false, submitError: error),
+      failure: (error) =>
+          state.copyWith(isSubmitting: false, submitError: error),
     );
 
     return result;
