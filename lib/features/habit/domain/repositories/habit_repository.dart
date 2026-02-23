@@ -19,6 +19,7 @@ abstract interface class HabitRepository {
 
   Future<Result<Habit, AppError>> updateHabit(Habit habit);
 
+  /// 論理削除（isActive を false に変更）
   Future<Result<void, AppError>> deleteHabit(int id);
 
   Future<Result<HabitLog, AppError>> completeHabit(int habitId);

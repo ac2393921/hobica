@@ -4,6 +4,7 @@ import 'package:hobica/core/types/result.dart';
 import 'package:hobica/features/habit/domain/models/frequency_type.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
+import 'package:hobica/mocks/fixtures.dart';
 import 'package:hobica/mocks/mock_habit_repository.dart';
 
 void main() {
@@ -15,163 +16,183 @@ void main() {
 
   group('MockHabitRepository', () {
     group('fetchAllHabits', () {
-      test('returns empty list initially', () async {
-        final result = await repository.fetchAllHabits();
-        expect(result, isEmpty);
+      test('returns initial fixtures', () async {
+        final habits = await repository.fetchAllHabits();
+
+        expect(habits.length, 2);
+        expect(habits.map((h) => h.title), containsAll(['読書 30分', 'ランニング']));
       });
 
-      test('returns all created habits', () async {
-        await repository.createHabit(
-          title: 'Morning Run',
-          points: 10,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-        );
-        await repository.createHabit(
-          title: 'Evening Read',
-          points: 5,
-          frequencyType: FrequencyType.weekly,
-          frequencyValue: 3,
-        );
+      test('excludes logically deleted habits', () async {
+        await repository.deleteHabit(1);
 
         final habits = await repository.fetchAllHabits();
-        expect(habits.length, 2);
+
+        expect(habits.length, 1);
+        expect(habits.first.id, 2);
       });
     });
 
     group('fetchHabitById', () {
-      test('returns null for non-existent id', () async {
-        final result = await repository.fetchHabitById(999);
-        expect(result, isNull);
+      test('returns habit by id', () async {
+        final habit = await repository.fetchHabitById(1);
+
+        expect(habit, isNotNull);
+        expect(habit!.id, 1);
       });
 
-      test('returns habit for existing id', () async {
-        final created = await repository.createHabit(
-          title: 'Morning Run',
-          points: 10,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-        );
-        final id = (created as Success<Habit, AppError>).value.id;
+      test('returns null for non-existent id', () async {
+        final habit = await repository.fetchHabitById(999);
 
-        final result = await repository.fetchHabitById(id);
-        expect(result, isNotNull);
-        expect(result!.title, 'Morning Run');
+        expect(habit, isNull);
+      });
+
+      test('returns null for logically deleted habit', () async {
+        await repository.deleteHabit(1);
+
+        final habit = await repository.fetchHabitById(1);
+
+        expect(habit, isNull);
       });
     });
 
     group('createHabit', () {
-      test('returns success with auto-incremented id', () async {
-        final result1 = await repository.createHabit(
-          title: 'Habit A',
-          points: 10,
+      test('creates habit and assigns auto-incremented id', () async {
+        final result = await repository.createHabit(
+          title: '瞑想',
+          points: 20,
           frequencyType: FrequencyType.daily,
           frequencyValue: 1,
         );
-        final result2 = await repository.createHabit(
-          title: 'Habit B',
-          points: 5,
-          frequencyType: FrequencyType.weekly,
-          frequencyValue: 2,
-        );
 
-        expect(result1, isA<Success<Habit, AppError>>());
-        expect(result2, isA<Success<Habit, AppError>>());
-
-        final id1 = (result1 as Success<Habit, AppError>).value.id;
-        final id2 = (result2 as Success<Habit, AppError>).value.id;
-        expect(id2, id1 + 1);
+        expect(result, isA<Success<Habit, AppError>>());
+        final habit = (result as Success<Habit, AppError>).value;
+        expect(habit.id, greaterThan(2));
+        expect(habit.title, '瞑想');
+        expect(habit.isActive, isTrue);
       });
 
-      test('stores habit with provided fields', () async {
+      test('created habit appears in fetchAllHabits', () async {
+        await repository.createHabit(
+          title: '瞑想',
+          points: 20,
+          frequencyType: FrequencyType.daily,
+          frequencyValue: 1,
+        );
+
+        final habits = await repository.fetchAllHabits();
+
+        expect(habits.length, 3);
+      });
+
+      test('returns validation error for empty title', () async {
         final result = await repository.createHabit(
-          title: 'Morning Run',
+          title: '',
           points: 10,
           frequencyType: FrequencyType.daily,
           frequencyValue: 1,
         );
 
-        final habit = (result as Success<Habit, AppError>).value;
-        expect(habit.title, 'Morning Run');
-        expect(habit.points, 10);
-        expect(habit.frequencyType, FrequencyType.daily);
-        expect(habit.frequencyValue, 1);
-        expect(habit.remindTime, isNull);
-        expect(habit.isActive, isTrue);
+        expect(result, isA<Failure<dynamic, AppError>>());
+        final error = (result as Failure<dynamic, AppError>).error;
+        expect(error, isA<ValidationError>());
+      });
+
+      test('returns validation error for title exceeding 50 chars', () async {
+        final result = await repository.createHabit(
+          title: 'a' * 51,
+          points: 10,
+          frequencyType: FrequencyType.daily,
+          frequencyValue: 1,
+        );
+
+        expect(result, isA<Failure<dynamic, AppError>>());
+      });
+
+      test('returns validation error for points less than 1', () async {
+        final result = await repository.createHabit(
+          title: '有効なタイトル',
+          points: 0,
+          frequencyType: FrequencyType.daily,
+          frequencyValue: 1,
+        );
+
+        expect(result, isA<Failure<dynamic, AppError>>());
+        final error = (result as Failure<dynamic, AppError>).error;
+        expect(error, isA<ValidationError>());
       });
     });
 
     group('updateHabit', () {
-      test('returns failure for non-existent habit', () async {
-        final nonExistent = Habit(
+      test('updates existing habit', () async {
+        final habits = await repository.fetchAllHabits();
+        final updated = habits.first.copyWith(title: '読書 1時間', points: 60);
+
+        final result = await repository.updateHabit(updated);
+
+        expect(result, isA<Success<dynamic, AppError>>());
+        final fetched = await repository.fetchHabitById(updated.id);
+        expect(fetched!.title, '読書 1時間');
+        expect(fetched.points, 60);
+      });
+
+      test('returns notFound error for non-existent habit', () async {
+        final nonExistent = HabitFixtures.initialHabits().first.copyWith(
           id: 999,
-          title: 'Ghost',
-          points: 1,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-          createdAt: DateTime.now(),
         );
 
         final result = await repository.updateHabit(nonExistent);
-        expect(result, isA<Failure<Habit, AppError>>());
-        expect(
-          (result as Failure<Habit, AppError>).error,
-          isA<NotFoundError>(),
-        );
+
+        expect(result, isA<Failure<dynamic, AppError>>());
+        final error = (result as Failure<dynamic, AppError>).error;
+        expect(error, isA<NotFoundError>());
       });
 
-      test('updates and returns modified habit', () async {
-        final created = await repository.createHabit(
-          title: 'Old Title',
-          points: 5,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-        );
-        final habit = (created as Success<Habit, AppError>).value;
+      test('returns validation error for empty title', () async {
+        final habits = await repository.fetchAllHabits();
+        final invalid = habits.first.copyWith(title: '');
 
-        final updated = habit.copyWith(title: 'New Title', points: 20);
-        final result = await repository.updateHabit(updated);
+        final result = await repository.updateHabit(invalid);
 
-        expect(result, isA<Success<Habit, AppError>>());
-        final returned = (result as Success<Habit, AppError>).value;
-        expect(returned.title, 'New Title');
-        expect(returned.points, 20);
+        expect(result, isA<Failure<dynamic, AppError>>());
+        final error = (result as Failure<dynamic, AppError>).error;
+        expect(error, isA<ValidationError>());
+      });
 
-        final fetched = await repository.fetchHabitById(habit.id);
-        expect(fetched!.title, 'New Title');
+      test('returns validation error for points less than 1', () async {
+        final habits = await repository.fetchAllHabits();
+        final invalid = habits.first.copyWith(points: 0);
+
+        final result = await repository.updateHabit(invalid);
+
+        expect(result, isA<Failure<dynamic, AppError>>());
+        final error = (result as Failure<dynamic, AppError>).error;
+        expect(error, isA<ValidationError>());
       });
     });
 
     group('deleteHabit', () {
-      test('returns failure for non-existent id', () async {
-        final result = await repository.deleteHabit(999);
-        expect(result, isA<Failure<void, AppError>>());
-        expect(
-          (result as Failure<void, AppError>).error,
-          isA<NotFoundError>(),
-        );
+      test('logically deletes habit (excludes from fetchAllHabits)', () async {
+        final result = await repository.deleteHabit(1);
+
+        expect(result, isA<Success<void, AppError>>());
+        final habits = await repository.fetchAllHabits();
+        expect(habits.any((h) => h.id == 1), isFalse);
       });
 
-      test('removes habit on success', () async {
-        final created = await repository.createHabit(
-          title: 'To Delete',
-          points: 5,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-        );
-        final id = (created as Success<Habit, AppError>).value.id;
+      test('returns notFound error for non-existent id', () async {
+        final result = await repository.deleteHabit(999);
 
-        final deleteResult = await repository.deleteHabit(id);
-        expect(deleteResult, isA<Success<void, AppError>>());
-
-        final fetched = await repository.fetchHabitById(id);
-        expect(fetched, isNull);
+        expect(result, isA<Failure<void, AppError>>());
+        final error = (result as Failure<void, AppError>).error;
+        expect(error, isA<NotFoundError>());
       });
     });
 
     group('completeHabit', () {
       test('returns failure for non-existent habitId', () async {
         final result = await repository.completeHabit(999);
+
         expect(result, isA<Failure<HabitLog, AppError>>());
         expect(
           (result as Failure<HabitLog, AppError>).error,
@@ -180,33 +201,17 @@ void main() {
       });
 
       test('returns HabitLog on first completion', () async {
-        final created = await repository.createHabit(
-          title: 'Morning Run',
-          points: 10,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-        );
-        final habitId = (created as Success<Habit, AppError>).value.id;
+        final result = await repository.completeHabit(1);
 
-        final result = await repository.completeHabit(habitId);
         expect(result, isA<Success<HabitLog, AppError>>());
-
         final log = (result as Success<HabitLog, AppError>).value;
-        expect(log.habitId, habitId);
-        expect(log.points, 10);
+        expect(log.habitId, 1);
+        expect(log.points, 30);
       });
 
       test('returns alreadyCompleted on same-day duplicate', () async {
-        final created = await repository.createHabit(
-          title: 'Morning Run',
-          points: 10,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-        );
-        final habitId = (created as Success<Habit, AppError>).value.id;
-
-        await repository.completeHabit(habitId);
-        final result = await repository.completeHabit(habitId);
+        await repository.completeHabit(1);
+        final result = await repository.completeHabit(1);
 
         expect(result, isA<Failure<HabitLog, AppError>>());
         expect(
@@ -216,17 +221,10 @@ void main() {
       });
 
       test('stores log accessible via habitLogs getter', () async {
-        final created = await repository.createHabit(
-          title: 'Morning Run',
-          points: 10,
-          frequencyType: FrequencyType.daily,
-          frequencyValue: 1,
-        );
-        final habitId = (created as Success<Habit, AppError>).value.id;
+        await repository.completeHabit(1);
 
-        await repository.completeHabit(habitId);
         expect(repository.habitLogs.length, 1);
-        expect(repository.habitLogs.first.habitId, habitId);
+        expect(repository.habitLogs.first.habitId, 1);
       });
     });
   });

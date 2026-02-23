@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
 import 'package:hobica/features/wallet/domain/models/wallet.dart';
+import 'package:hobica/features/wallet/domain/repositories/wallet_repository.dart';
 import 'package:hobica/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:hobica/mocks/mock_wallet_repository.dart';
 
@@ -16,14 +17,12 @@ ProviderContainer _makeContainer() {
 
 void main() {
   group('walletRepositoryProvider', () {
-    test('provides MockWalletRepository by default', () {
+    test('provides a WalletRepository instance', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(
-        container.read(walletRepositoryProvider),
-        isA<MockWalletRepository>(),
-      );
+      final repo = container.read(walletRepositoryProvider);
+      expect(repo, isA<WalletRepository>());
     });
   });
 
@@ -47,9 +46,7 @@ void main() {
         addTearDown(container.dispose);
 
         await container.read(walletNotifierProvider.future);
-        await container
-            .read(walletNotifierProvider.notifier)
-            .addPoints(50);
+        await container.read(walletNotifierProvider.notifier).addPoints(50);
 
         final state = container.read(walletNotifierProvider).value!;
         expect(state.currentPoints, 50);
@@ -60,12 +57,8 @@ void main() {
         addTearDown(container.dispose);
 
         await container.read(walletNotifierProvider.future);
-        await container
-            .read(walletNotifierProvider.notifier)
-            .addPoints(30);
-        await container
-            .read(walletNotifierProvider.notifier)
-            .addPoints(20);
+        await container.read(walletNotifierProvider.notifier).addPoints(30);
+        await container.read(walletNotifierProvider.notifier).addPoints(20);
 
         final state = container.read(walletNotifierProvider).value!;
         expect(state.currentPoints, 50);
@@ -89,24 +82,24 @@ void main() {
         );
       });
 
-      test('returns Success and updates state when sufficient points',
-          () async {
-        final container = _makeContainer();
-        addTearDown(container.dispose);
+      test(
+        'returns Success and updates state when sufficient points',
+        () async {
+          final container = _makeContainer();
+          addTearDown(container.dispose);
 
-        await container.read(walletNotifierProvider.future);
-        await container
-            .read(walletNotifierProvider.notifier)
-            .addPoints(100);
-        final result = await container
-            .read(walletNotifierProvider.notifier)
-            .subtractPoints(60);
+          await container.read(walletNotifierProvider.future);
+          await container.read(walletNotifierProvider.notifier).addPoints(100);
+          final result = await container
+              .read(walletNotifierProvider.notifier)
+              .subtractPoints(60);
 
-        expect(result, isA<Success<Wallet, AppError>>());
+          expect(result, isA<Success<Wallet, AppError>>());
 
-        final state = container.read(walletNotifierProvider).value!;
-        expect(state.currentPoints, 40);
-      });
+          final state = container.read(walletNotifierProvider).value!;
+          expect(state.currentPoints, 40);
+        },
+      );
 
       test('does not update state on failure', () async {
         final container = _makeContainer();
@@ -120,6 +113,31 @@ void main() {
         final state = container.read(walletNotifierProvider).value!;
         expect(state.currentPoints, 0);
       });
+    });
+  });
+
+  group('walletBalanceProvider', () {
+    test('returns initial wallet with 0 points', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final wallet = await container.read(walletBalanceProvider.future);
+      expect(wallet, isA<Wallet>());
+      expect(wallet.currentPoints, 0);
+    });
+
+    test('reflects updated balance after repository addPoints', () async {
+      final mockRepo = MockWalletRepository();
+      final container = ProviderContainer(
+        overrides: [walletRepositoryProvider.overrideWithValue(mockRepo)],
+      );
+      addTearDown(container.dispose);
+
+      await mockRepo.addPoints(100);
+      container.invalidate(walletBalanceProvider);
+
+      final wallet = await container.read(walletBalanceProvider.future);
+      expect(wallet.currentPoints, 100);
     });
   });
 }

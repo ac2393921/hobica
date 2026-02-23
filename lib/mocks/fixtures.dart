@@ -84,19 +84,10 @@ final mockRewards = List<Reward>.unmodifiable([
 ]);
 
 final mockRedemptions = List<RewardRedemption>.unmodifiable([
-  RewardRedemption(
-    id: 1,
-    rewardId: 1,
-    pointsSpent: 100,
-    redeemedAt: _baseDate,
-  ),
+  RewardRedemption(id: 1, rewardId: 1, pointsSpent: 100, redeemedAt: _baseDate),
 ]);
 
-final mockWallet = Wallet(
-  id: 1,
-  currentPoints: 250,
-  updatedAt: _baseDate,
-);
+final mockWallet = Wallet(id: 1, currentPoints: 250, updatedAt: _baseDate);
 
 final mockAppSettings = AppSettings(
   id: 1,
@@ -111,3 +102,10 @@ final mockPremiumStatus = PremiumStatus(
   isPremium: false,
   updatedAt: _baseDate,
 );
+
+class HabitFixtures {
+  HabitFixtures._();
+
+  static List<Habit> initialHabits() =>
+      mockHabits.where((habit) => habit.isActive).toList(growable: false);
+}

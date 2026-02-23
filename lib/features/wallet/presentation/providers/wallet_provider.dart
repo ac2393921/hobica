@@ -9,7 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'wallet_provider.g.dart';
 
 @riverpod
-WalletRepository walletRepository(Ref ref) {
+WalletRepository walletRepository(WalletRepositoryRef ref) {
   return MockWalletRepository();
 }
 
@@ -25,6 +25,7 @@ class WalletNotifier extends _$WalletNotifier {
     final repository = ref.read(walletRepositoryProvider);
     final wallet = await repository.addPoints(points);
     state = AsyncValue.data(wallet);
+    ref.invalidate(walletBalanceProvider);
   }
 
   Future<Result<Wallet, AppError>> subtractPoints(int points) async {
@@ -32,7 +33,17 @@ class WalletNotifier extends _$WalletNotifier {
     final result = await repository.subtractPoints(points);
     if (result is Success<Wallet, AppError>) {
       state = AsyncValue.data(result.value);
+      ref.invalidate(walletBalanceProvider);
     }
     return result;
+  }
+}
+
+@riverpod
+class WalletBalance extends _$WalletBalance {
+  @override
+  Future<Wallet> build() async {
+    final repository = ref.watch(walletRepositoryProvider);
+    return repository.getWallet();
   }
 }
