@@ -21,7 +21,6 @@ class ThemeSwitcher extends StatelessWidget {
 
     return Switch(
       value: isDark,
-      leading: const Icon(BootstrapIcons.moonFill),
       onChanged: (value) =>
           onChanged(value ? AppThemeMode.dark : AppThemeMode.system),
     );
