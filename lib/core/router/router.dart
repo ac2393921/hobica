@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hobica/features/history/presentation/pages/history_page.dart';
 
 import 'routes.dart';
 
@@ -46,9 +47,6 @@ class _PlaceholderPage extends StatelessWidget {
   }
 }
 
-/// ボトムナビゲーション付きシェル
-///
-/// 5つのタブを持つボトムナビゲーションを実装。
 /// フェーズ12.2でshadcn_flutterのTabsコンポーネントに置き換え予定。
 class _ScaffoldWithNavBar extends StatelessWidget {
   const _ScaffoldWithNavBar({required this.child});
@@ -114,10 +112,6 @@ class _ScaffoldWithNavBar extends StatelessWidget {
   }
 }
 
-/// GoRouterインスタンス
-///
-/// アプリ全体のルーティング設定を管理。
-/// StatefulShellRoute.indexedStackでタブ間の状態を保持。
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.home,
   routes: [
@@ -231,9 +225,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.history,
               name: AppRouteNames.history,
-              builder: (context, state) => const _PlaceholderPage(
-                title: '履歴',
-              ),
+              builder: (context, state) => const HistoryPage(),
             ),
           ],
         ),
