@@ -7,32 +7,25 @@ class RewardProgressBar extends StatelessWidget {
     super.key,
   });
 
-  static const double _progressTextSpacing = 4;
-
   final int currentPoints;
   final int targetPoints;
 
+  double get _progressValue =>
+      targetPoints == 0 ? 1.0 : (currentPoints / targetPoints).clamp(0.0, 1.0);
+
   bool get _isUnlocked => currentPoints >= targetPoints;
+
+  String get _statusText =>
+      _isUnlocked ? '解禁！' : 'あと ${targetPoints - currentPoints} pt';
 
   @override
   Widget build(BuildContext context) {
-    final clampedProgress = currentPoints.clamp(0, targetPoints).toDouble();
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Progress(
-          progress: clampedProgress,
-          max: targetPoints.toDouble(),
-        ),
-        const SizedBox(height: _progressTextSpacing),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('$currentPoints/${targetPoints}pt'),
-            Text(_isUnlocked ? '解禁！' : 'あと${targetPoints - currentPoints}pt'),
-          ],
-        ),
+        LinearProgressIndicator(value: _progressValue),
+        const SizedBox(height: 4),
+        Text(_statusText),
       ],
     );
   }
