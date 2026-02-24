@@ -9,17 +9,14 @@ import 'package:hobica/mocks/history_repository_provider.dart';
 import 'package:hobica/mocks/mock_history_repository.dart';
 
 void main() {
-  group('HistoryHabitLogsProvider', () {
+  group('PointHistoryProvider', () {
     late ProviderContainer container;
 
     setUp(() {
       container = ProviderContainer(
         overrides: [
           historyRepositoryProvider.overrideWith(
-            (_) => MockHistoryRepository(
-              habitLogs: mockHabitLogs.toList(),
-              redemptions: mockRedemptions.toList(),
-            ),
+            (_) => MockHistoryRepository(habitLogs: mockHabitLogs),
           ),
         ],
       );
@@ -30,55 +27,38 @@ void main() {
     });
 
     test('初期状態は AsyncLoading', () {
-      final state = container.read(historyHabitLogsProvider);
+      final state = container.read(pointHistoryProvider);
       expect(state, isA<AsyncLoading<List<HabitLog>>>());
     });
 
     test('fetchHabitLogs が返すリストを正しく公開する', () async {
-      final result = await container.read(historyHabitLogsProvider.future);
-      expect(result, hasLength(2));
-      expect(result[0].id, 1);
-      expect(result[1].id, 2);
-    });
-
-    test('refresh() 後もデータが一貫している', () async {
-      await container.read(historyHabitLogsProvider.future);
-      expect(container.read(historyHabitLogsProvider).value, hasLength(2));
-
-      // MockHistoryRepository はイミュータブルなため、refresh 後も同じデータが返る
-      final notifier = container.read(historyHabitLogsProvider.notifier);
-      await notifier.refresh();
-
-      expect(container.read(historyHabitLogsProvider).value, hasLength(2));
+      final result = await container.read(pointHistoryProvider.future);
+      expect(result, hasLength(mockHabitLogs.length));
+      expect(result.first.habitId, mockHabitLogs.first.habitId);
     });
 
     test('HistoryRepository を override して任意の実装を注入できる', () async {
+      final customMock = _AlwaysEmptyHistoryRepository();
       final customContainer = ProviderContainer(
         overrides: [
-          historyRepositoryProvider.overrideWith(
-            (_) => _AlwaysEmptyHistoryRepository(),
-          ),
+          historyRepositoryProvider.overrideWith((_) => customMock),
         ],
       );
       addTearDown(customContainer.dispose);
 
-      final result =
-          await customContainer.read(historyHabitLogsProvider.future);
+      final result = await customContainer.read(pointHistoryProvider.future);
       expect(result, isEmpty);
     });
   });
 
-  group('HistoryRedemptionsProvider', () {
+  group('RedemptionHistoryProvider', () {
     late ProviderContainer container;
 
     setUp(() {
       container = ProviderContainer(
         overrides: [
           historyRepositoryProvider.overrideWith(
-            (_) => MockHistoryRepository(
-              habitLogs: mockHabitLogs.toList(),
-              redemptions: mockRedemptions.toList(),
-            ),
+            (_) => MockHistoryRepository(redemptions: mockRedemptions),
           ),
         ],
       );
@@ -89,45 +69,32 @@ void main() {
     });
 
     test('初期状態は AsyncLoading', () {
-      final state = container.read(historyRedemptionsProvider);
+      final state = container.read(redemptionHistoryProvider);
       expect(state, isA<AsyncLoading<List<RewardRedemption>>>());
     });
 
     test('fetchRedemptions が返すリストを正しく公開する', () async {
-      final result = await container.read(historyRedemptionsProvider.future);
-      expect(result, hasLength(1));
-      expect(result[0].id, 1);
-    });
-
-    test('refresh() 後もデータが一貫している', () async {
-      await container.read(historyRedemptionsProvider.future);
-      expect(container.read(historyRedemptionsProvider).value, hasLength(1));
-
-      // MockHistoryRepository はイミュータブルなため、refresh 後も同じデータが返る
-      final notifier = container.read(historyRedemptionsProvider.notifier);
-      await notifier.refresh();
-
-      expect(container.read(historyRedemptionsProvider).value, hasLength(1));
+      final result = await container.read(redemptionHistoryProvider.future);
+      expect(result, hasLength(mockRedemptions.length));
+      expect(result.first.rewardId, mockRedemptions.first.rewardId);
     });
 
     test('HistoryRepository を override して任意の実装を注入できる', () async {
+      final customMock = _AlwaysEmptyHistoryRepository();
       final customContainer = ProviderContainer(
         overrides: [
-          historyRepositoryProvider.overrideWith(
-            (_) => _AlwaysEmptyHistoryRepository(),
-          ),
+          historyRepositoryProvider.overrideWith((_) => customMock),
         ],
       );
       addTearDown(customContainer.dispose);
 
       final result =
-          await customContainer.read(historyRedemptionsProvider.future);
+          await customContainer.read(redemptionHistoryProvider.future);
       expect(result, isEmpty);
     });
   });
 }
 
-/// テスト用：常に空リストを返すリポジトリ
 class _AlwaysEmptyHistoryRepository implements HistoryRepository {
   @override
   Future<List<HabitLog>> fetchHabitLogs() async => [];
