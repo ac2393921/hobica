@@ -1,17 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/widgets.dart';
-import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
 import 'package:hobica/features/habit/presentation/widgets/habit_card.dart';
 import 'package:hobica/features/home/presentation/pages/home_page.dart';
 import 'package:hobica/features/home/presentation/widgets/today_habits_section.dart';
 import 'package:hobica/features/home/presentation/widgets/top_rewards_section.dart';
-import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';
 import 'package:hobica/features/reward/presentation/widgets/reward_card.dart';
 import 'package:hobica/features/wallet/presentation/providers/wallet_provider.dart';
+import 'package:hobica/mocks/habit_repository_provider.dart';
+import 'package:hobica/mocks/history_repository_provider.dart';
 import 'package:hobica/mocks/mock_habit_repository.dart';
+import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:hobica/mocks/mock_reward_repository.dart';
 import 'package:hobica/mocks/mock_wallet_repository.dart';
+import 'package:hobica/mocks/reward_repository_provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 final _testTheme = ThemeData(
@@ -23,10 +25,12 @@ final _testTheme = ThemeData(
 Future<void> pumpHomePage(
   WidgetTester tester, {
   MockHabitRepository? mockHabitRepo,
+  MockHistoryRepository? mockHistoryRepo,
   MockRewardRepository? mockRewardRepo,
   MockWalletRepository? mockWalletRepo,
 }) async {
   final habitRepo = mockHabitRepo ?? MockHabitRepository();
+  final historyRepo = mockHistoryRepo ?? MockHistoryRepository();
   final rewardRepo = mockRewardRepo ?? MockRewardRepository();
   final walletRepo = mockWalletRepo ?? MockWalletRepository();
 
@@ -34,6 +38,7 @@ Future<void> pumpHomePage(
     ProviderScope(
       overrides: [
         habitRepositoryProvider.overrideWithValue(habitRepo),
+        historyRepositoryProvider.overrideWithValue(historyRepo),
         rewardRepositoryProvider.overrideWithValue(rewardRepo),
         walletRepositoryProvider.overrideWithValue(walletRepo),
       ],
@@ -104,12 +109,11 @@ void main() {
       expect(find.byType(RewardCard), findsNWidgets(3));
     });
 
-    testWidgets('ご褒美が空のときは EmptyView を表示する', (tester) async {
+    testWidgets('ご褒美が空のときは空メッセージを表示する', (tester) async {
       // MockRewardRepository はデフォルトで空
       await pumpHomePage(tester);
       await tester.pumpAndSettle();
 
-      expect(find.byType(EmptyView), findsAtLeastNWidgets(1));
       expect(find.text('ご褒美がありません'), findsOneWidget);
     });
 

@@ -1,116 +1,124 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
+import 'package:hobica/features/habit/domain/models/habit_log.dart';
 import 'package:hobica/features/home/presentation/providers/home_provider.dart';
-import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';
+import 'package:hobica/mocks/fixtures.dart';
+import 'package:hobica/mocks/habit_repository_provider.dart';
+import 'package:hobica/mocks/history_repository_provider.dart';
 import 'package:hobica/mocks/mock_habit_repository.dart';
+import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:hobica/mocks/mock_reward_repository.dart';
-
-ProviderContainer _makeContainer({
-  MockHabitRepository? habitRepo,
-  MockRewardRepository? rewardRepo,
-}) {
-  return ProviderContainer(
-    overrides: [
-      habitRepositoryProvider.overrideWithValue(
-        habitRepo ?? MockHabitRepository(),
-      ),
-      rewardRepositoryProvider.overrideWithValue(
-        rewardRepo ?? MockRewardRepository(),
-      ),
-    ],
-  );
-}
+import 'package:hobica/mocks/reward_repository_provider.dart';
 
 void main() {
+  late MockHabitRepository mockHabitRepo;
+  late MockHistoryRepository mockHistoryRepo;
+  late MockRewardRepository mockRewardRepo;
+  late ProviderContainer container;
+
+  ProviderContainer makeContainer({MockHistoryRepository? historyRepo}) {
+    return ProviderContainer(
+      overrides: [
+        habitRepositoryProvider.overrideWithValue(mockHabitRepo),
+        historyRepositoryProvider.overrideWithValue(
+          historyRepo ?? mockHistoryRepo,
+        ),
+        rewardRepositoryProvider.overrideWithValue(mockRewardRepo),
+      ],
+    );
+  }
+
+  setUp(() {
+    mockHabitRepo = MockHabitRepository();
+    mockHistoryRepo = MockHistoryRepository();
+    mockRewardRepo = MockRewardRepository();
+    container = makeContainer();
+  });
+
+  tearDown(() {
+    container.dispose();
+  });
+
   group('HomeProvider', () {
-    group('todayHabits', () {
-      test('returns all active habits from habitListProvider', () async {
-        final container = _makeContainer();
-        addTearDown(container.dispose);
-
-        final homeData = await container.read(homeProvider.future);
-
-        // MockHabitRepository starts with 2 active habits (読書 30分, ランニング)
-        expect(homeData.todayHabits.length, 2);
-      });
-
-      test('returns empty list when no habits exist', () async {
-        final emptyHabitRepo = MockHabitRepository();
-        final habits = await emptyHabitRepo.fetchAllHabits();
-        for (final habit in habits) {
-          await emptyHabitRepo.deleteHabit(habit.id);
-        }
-
-        final container = _makeContainer(habitRepo: emptyHabitRepo);
-        addTearDown(container.dispose);
-
-        final homeData = await container.read(homeProvider.future);
-
-        expect(homeData.todayHabits, isEmpty);
-      });
+    test('initial state is AsyncLoading', () {
+      final state = container.read(homeProvider);
+      expect(state, isA<AsyncLoading<HomeState>>());
     });
 
-    group('topRewards', () {
-      test('returns empty list when no rewards exist', () async {
-        final container = _makeContainer();
-        addTearDown(container.dispose);
+    test('activeHabits contains all active habits', () async {
+      final state = await container.read(homeProvider.future);
 
-        final homeData = await container.read(homeProvider.future);
+      expect(state.activeHabits.length, HabitFixtures.initialHabits().length);
+    });
 
-        // MockRewardRepository starts empty
-        expect(homeData.topRewards, isEmpty);
-      });
+    test('completedHabitIds contains habit id logged today', () async {
+      final today = DateTime.now();
+      final todayLog = HabitLog(
+        id: 1,
+        habitId: 1,
+        date: today,
+        points: 30,
+        createdAt: today,
+      );
+      final customContainer = makeContainer(
+        historyRepo: MockHistoryRepository(habitLogs: [todayLog]),
+      );
+      addTearDown(customContainer.dispose);
 
-      test('returns all rewards when 3 or fewer exist', () async {
-        final rewardRepo = MockRewardRepository();
-        await rewardRepo.createReward(title: 'Reward 1', targetPoints: 100);
-        await rewardRepo.createReward(title: 'Reward 2', targetPoints: 200);
+      final state = await customContainer.read(homeProvider.future);
 
-        final container = _makeContainer(rewardRepo: rewardRepo);
-        addTearDown(container.dispose);
+      expect(state.completedHabitIds, contains(1));
+    });
 
-        final homeData = await container.read(homeProvider.future);
+    test('completedHabitIds excludes habit id logged on other day', () async {
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      final pastLog = HabitLog(
+        id: 1,
+        habitId: 1,
+        date: yesterday,
+        points: 30,
+        createdAt: yesterday,
+      );
+      final customContainer = makeContainer(
+        historyRepo: MockHistoryRepository(habitLogs: [pastLog]),
+      );
+      addTearDown(customContainer.dispose);
 
-        expect(homeData.topRewards.length, 2);
-      });
+      final state = await customContainer.read(homeProvider.future);
 
-      test('returns at most 3 rewards when more than 3 exist', () async {
-        final rewardRepo = MockRewardRepository();
-        for (var i = 0; i < 5; i++) {
-          await rewardRepo.createReward(
-            title: 'Reward $i',
-            targetPoints: 100,
-          );
-        }
+      expect(state.completedHabitIds, isNot(contains(1)));
+    });
 
-        final container = _makeContainer(rewardRepo: rewardRepo);
-        addTearDown(container.dispose);
+    test('topRewards is limited to 3 when more than 3 rewards exist', () async {
+      await mockRewardRepo.createReward(title: 'Reward A', targetPoints: 500);
+      await mockRewardRepo.createReward(title: 'Reward B', targetPoints: 200);
+      await mockRewardRepo.createReward(title: 'Reward C', targetPoints: 100);
+      await mockRewardRepo.createReward(title: 'Reward D', targetPoints: 300);
 
-        final homeData = await container.read(homeProvider.future);
+      final state = await container.read(homeProvider.future);
 
-        expect(homeData.topRewards.length, 3);
-      });
+      expect(state.topRewards.length, 3);
+    });
 
-      test('returns first 3 rewards in order when more than 3 exist', () async {
-        final rewardRepo = MockRewardRepository();
-        for (var i = 1; i <= 5; i++) {
-          await rewardRepo.createReward(
-            title: 'Reward $i',
-            targetPoints: i * 100,
-          );
-        }
+    test('topRewards is sorted by targetPoints ascending', () async {
+      await mockRewardRepo.createReward(title: 'Expensive', targetPoints: 500);
+      await mockRewardRepo.createReward(title: 'Cheap', targetPoints: 100);
+      await mockRewardRepo.createReward(title: 'Mid', targetPoints: 300);
 
-        final container = _makeContainer(rewardRepo: rewardRepo);
-        addTearDown(container.dispose);
+      final state = await container.read(homeProvider.future);
 
-        final homeData = await container.read(homeProvider.future);
+      final points =
+          state.topRewards.map((r) => r.targetPoints).toList();
+      expect(points, [100, 300, 500]);
+    });
 
-        expect(homeData.topRewards.length, 3);
-        expect(homeData.topRewards[0].title, 'Reward 1');
-        expect(homeData.topRewards[1].title, 'Reward 2');
-        expect(homeData.topRewards[2].title, 'Reward 3');
-      });
+    test('topRewards returns all rewards when fewer than 3 exist', () async {
+      await mockRewardRepo.createReward(title: 'Reward A', targetPoints: 300);
+      await mockRewardRepo.createReward(title: 'Reward B', targetPoints: 100);
+
+      final state = await container.read(homeProvider.future);
+
+      expect(state.topRewards.length, 2);
     });
   });
 }

@@ -5,9 +5,11 @@ import 'package:hobica/features/habit/presentation/pages/habit_detail_page.dart'
 import 'package:hobica/features/habit/presentation/pages/habit_form_page.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_list_page.dart';
 import 'package:hobica/features/home/presentation/pages/home_page.dart';
+import 'package:hobica/features/history/presentation/pages/history_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
+import 'package:hobica/features/settings/presentation/pages/settings_page.dart';
 
 import 'routes.dart';
 
@@ -45,6 +47,7 @@ class _PlaceholderPage extends StatelessWidget {
 /// ボトムナビゲーション付きシェル
 ///
 /// 5つのタブを持つボトムナビゲーションを実装。
+/// フェーズ12.2でshadcn_flutterのTabsコンポーネントに置き換え予定。
 class _ScaffoldWithNavBar extends StatelessWidget {
   const _ScaffoldWithNavBar({required this.child});
 
@@ -97,10 +100,6 @@ class _ScaffoldWithNavBar extends StatelessWidget {
   }
 }
 
-/// GoRouterインスタンス
-///
-/// アプリ全体のルーティング設定を管理。
-/// StatefulShellRoute.indexedStackでタブ間の状態を保持。
 final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.home,
   routes: [
@@ -199,7 +198,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.history,
               name: AppRouteNames.history,
-              builder: (context, state) => const _PlaceholderPage(title: '履歴'),
+              builder: (context, state) => const HistoryPage(),
             ),
           ],
         ),
@@ -209,7 +208,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.settings,
               name: AppRouteNames.settings,
-              builder: (context, state) => const _PlaceholderPage(title: '設定'),
+              builder: (context, state) => const SettingsPage(),
               routes: [
                 GoRoute(
                   path: 'premium',

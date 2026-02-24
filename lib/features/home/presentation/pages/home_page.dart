@@ -20,7 +20,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeAsync = ref.watch(homeProvider);
     final walletAsync = ref.watch(walletBalanceProvider);
-    final completedIds = ref.watch(habitCompletionProvider);
+    final completionState = ref.watch(habitCompletionProvider);
 
     return Scaffold(
       headers: [
@@ -48,7 +48,7 @@ class HomePage extends ConsumerWidget {
           message: error.toString(),
           onRetry: () => ref.invalidate(homeProvider),
         ),
-        data: (homeData) => walletAsync.when(
+        data: (homeState) => walletAsync.when(
           loading: () => const LoadingIndicator(),
           error: (error, _) => ErrorView(
             message: error.toString(),
@@ -58,8 +58,11 @@ class HomePage extends ConsumerWidget {
             padding: const EdgeInsets.all(_contentPadding),
             children: [
               TodayHabitsSection(
-                habits: homeData.todayHabits,
-                completedIds: completedIds,
+                habits: homeState.activeHabits,
+                completedIds: {
+                  ...homeState.completedHabitIds,
+                  ...completionState,
+                },
                 onComplete: (habitId) => ref
                     .read(habitCompletionProvider.notifier)
                     .completeHabit(habitId),
@@ -67,10 +70,10 @@ class HomePage extends ConsumerWidget {
               ),
               const SizedBox(height: _sectionSpacing),
               TopRewardsSection(
-                rewards: homeData.topRewards,
+                rewards: homeState.topRewards,
                 currentPoints: wallet.currentPoints,
-                onViewAll: () => context.go(AppRoutes.rewards),
-                onTapReward: (id) => context.pushNamed(
+                onSeeAll: () => context.go(AppRoutes.rewards),
+                onRewardTap: (id) => context.pushNamed(
                   AppRouteNames.rewardDetail,
                   pathParameters: {AppRouteParams.id: id.toString()},
                 ),
