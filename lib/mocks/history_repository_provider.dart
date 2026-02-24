@@ -5,7 +5,7 @@ import 'package:hobica/mocks/mock_history_repository.dart';
 
 final historyRepositoryProvider = Provider<HistoryRepository>(
   (_) => MockHistoryRepository(
-    habitLogs: mockHabitLogs,
-    redemptions: mockRedemptions,
+    habitLogs: mockHabitLogs.toList(),
+    redemptions: mockRedemptions.toList(),
   ),
 );

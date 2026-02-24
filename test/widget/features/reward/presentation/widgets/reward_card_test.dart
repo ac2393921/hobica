@@ -12,10 +12,10 @@ final _testTheme = ThemeData(
 
 final _baseReward = Reward(
   id: 1,
-  title: '好きなスイーツ',
-  targetPoints: 200,
+  title: 'ケーキ',
+  targetPoints: 300,
   category: RewardCategory.food,
-  createdAt: DateTime(2026, 2),
+  createdAt: DateTime(2026),
 );
 
 Future<void> pumpRewardCard(
@@ -40,69 +40,60 @@ Future<void> pumpRewardCard(
 
 void main() {
   group('RewardCard', () {
-    testWidgets('should display reward title', (tester) async {
-      await pumpRewardCard(
-        tester,
-        reward: _baseReward,
-        currentPoints: 150,
-      );
+    testWidgets('displays reward title', (tester) async {
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
 
-      expect(find.text('好きなスイーツ'), findsOneWidget);
+      expect(find.text('ケーキ'), findsOneWidget);
     });
 
-    testWidgets('should contain RewardProgressBar', (tester) async {
-      await pumpRewardCard(
-        tester,
-        reward: _baseReward,
-        currentPoints: 150,
+    testWidgets('displays category badge when category is set', (tester) async {
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
+
+      expect(find.text('食'), findsOneWidget);
+      expect(find.byType(PrimaryBadge), findsOneWidget);
+    });
+
+    testWidgets('does not display category badge when category is null', (
+      tester,
+    ) async {
+      final reward = Reward(
+        id: 2,
+        title: 'ギフトカード',
+        targetPoints: 500,
+        createdAt: DateTime(2026),
       );
+
+      await pumpRewardCard(tester, reward: reward, currentPoints: 100);
+
+      expect(find.byType(PrimaryBadge), findsNothing);
+    });
+
+    testWidgets('displays RewardProgressBar', (tester) async {
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
 
       expect(find.byType(RewardProgressBar), findsOneWidget);
     });
 
-    testWidgets('should display category label when category is not null',
-        (tester) async {
-      await pumpRewardCard(
-        tester,
-        reward: _baseReward,
-        currentPoints: 150,
-      );
+    testWidgets('shows placeholder icon when imageUri is null', (tester) async {
+      await pumpRewardCard(tester, reward: _baseReward, currentPoints: 100);
 
-      expect(find.text('食'), findsOneWidget);
+      expect(find.byIcon(BootstrapIcons.gift), findsOneWidget);
     });
 
-    testWidgets('should not display category label when category is null',
-        (tester) async {
-      final rewardWithoutCategory = Reward(
-        id: 2,
-        title: 'カテゴリなしご褒美',
-        targetPoints: 100,
-        createdAt: DateTime(2026, 2),
-      );
-
-      await pumpRewardCard(
-        tester,
-        reward: rewardWithoutCategory,
-        currentPoints: 50,
-      );
-
-      expect(find.byType(SecondaryBadge), findsNothing);
-    });
-
-    testWidgets('should call onTap callback when tapped', (tester) async {
-      var callCount = 0;
+    testWidgets('calls onTap when card is tapped', (tester) async {
+      var tapCount = 0;
 
       await pumpRewardCard(
         tester,
         reward: _baseReward,
-        currentPoints: 150,
-        onTap: () => callCount++,
+        currentPoints: 100,
+        onTap: () => tapCount++,
       );
 
       await tester.tap(find.byType(GestureDetector));
       await tester.pump();
 
-      expect(callCount, equals(1));
+      expect(tapCount, 1);
     });
   });
 }
