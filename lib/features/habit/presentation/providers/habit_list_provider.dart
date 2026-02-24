@@ -1,16 +1,16 @@
+import 'package:hobica/core/database/providers/database_provider.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
+import 'package:hobica/features/habit/data/repositories/habit_repository_impl.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/domain/repositories/habit_repository.dart';
-import 'package:hobica/mocks/mock_habit_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'habit_list_provider.g.dart';
 
 @riverpod
-// ignore: deprecated_member_use_from_same_package
 HabitRepository habitRepository(HabitRepositoryRef ref) {
-  return MockHabitRepository();
+  return HabitRepositoryImpl(ref.watch(appDatabaseProvider));
 }
 
 @riverpod

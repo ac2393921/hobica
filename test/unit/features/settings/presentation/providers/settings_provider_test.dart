@@ -1,81 +1,102 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hobica/features/settings/domain/models/app_settings.dart';
 import 'package:hobica/features/settings/domain/models/app_theme_mode.dart';
 import 'package:hobica/features/settings/presentation/providers/settings_provider.dart';
 import 'package:hobica/mocks/mock_settings_repository.dart';
 
+ProviderContainer _makeContainer() {
+  return ProviderContainer(
+    overrides: [
+      settingsRepositoryProvider.overrideWithValue(MockSettingsRepository()),
+    ],
+  );
+}
+
 void main() {
-  late ProviderContainer container;
-  late MockSettingsRepository mockRepo;
+  group('settingsRepositoryProvider', () {
+    test('requires appDatabaseProvider override for default usage', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
 
-  setUp(() {
-    mockRepo = MockSettingsRepository();
-    container = ProviderContainer(
-      overrides: [
-        settingsRepositoryProvider.overrideWithValue(mockRepo),
-      ],
-    );
-  });
-
-  tearDown(() {
-    container.dispose();
+      expect(
+        () => container.read(settingsRepositoryProvider),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
   });
 
   group('SettingsNotifier', () {
-    test('build returns default AppSettings from repository', () async {
-      final settings = await container.read(settingsNotifierProvider.future);
+    test('build loads initial settings state via getSettings', () async {
+      final container = _makeContainer();
+      addTearDown(container.dispose);
 
-      expect(settings, isA<AppSettings>());
-      expect(settings.themeMode, AppThemeMode.system);
-      expect(settings.notificationsEnabled, true);
+      final state = await container.read(settingsNotifierProvider.future);
+
+      expect(state.id, 1);
+      expect(state.themeMode, AppThemeMode.system);
+      expect(state.notificationsEnabled, true);
+      expect(state.locale, 'ja');
     });
 
-    test('updateThemeMode updates themeMode and reflects in state', () async {
-      await container.read(settingsNotifierProvider.future);
+    test('updateThemeMode updates themeMode to dark', () async {
+      final container = _makeContainer();
+      addTearDown(container.dispose);
 
+      await container.read(settingsNotifierProvider.future);
       await container
           .read(settingsNotifierProvider.notifier)
           .updateThemeMode(AppThemeMode.dark);
 
-      final settings = await container.read(settingsNotifierProvider.future);
-      expect(settings.themeMode, AppThemeMode.dark);
+      final state = container.read(settingsNotifierProvider).value!;
+      expect(state.themeMode, AppThemeMode.dark);
     });
 
-    test('updateNotificationEnabled to false updates state', () async {
+    test('updateThemeMode updates themeMode to light', () async {
+      final container = _makeContainer();
+      addTearDown(container.dispose);
+
       await container.read(settingsNotifierProvider.future);
-
-      await container
-          .read(settingsNotifierProvider.notifier)
-          .updateNotificationEnabled(enabled: false);
-
-      final settings = await container.read(settingsNotifierProvider.future);
-      expect(settings.notificationsEnabled, false);
-    });
-
-    test('updateNotificationEnabled to true updates state', () async {
-      await container.read(settingsNotifierProvider.future);
-      await container
-          .read(settingsNotifierProvider.notifier)
-          .updateNotificationEnabled(enabled: false);
-
-      await container
-          .read(settingsNotifierProvider.notifier)
-          .updateNotificationEnabled(enabled: true);
-
-      final settings = await container.read(settingsNotifierProvider.future);
-      expect(settings.notificationsEnabled, true);
-    });
-
-    test('updateThemeMode to light changes themeMode', () async {
-      await container.read(settingsNotifierProvider.future);
-
       await container
           .read(settingsNotifierProvider.notifier)
           .updateThemeMode(AppThemeMode.light);
 
-      final settings = await container.read(settingsNotifierProvider.future);
-      expect(settings.themeMode, AppThemeMode.light);
+      final state = container.read(settingsNotifierProvider).value!;
+      expect(state.themeMode, AppThemeMode.light);
     });
+
+    test(
+      'updateNotificationEnabled updates notificationsEnabled to false',
+      () async {
+        final container = _makeContainer();
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+        await container
+            .read(settingsNotifierProvider.notifier)
+            .updateNotificationEnabled(enabled: false);
+
+        final state = container.read(settingsNotifierProvider).value!;
+        expect(state.notificationsEnabled, false);
+      },
+    );
+
+    test(
+      'updateNotificationEnabled updates notificationsEnabled to true',
+      () async {
+        final container = _makeContainer();
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+        await container
+            .read(settingsNotifierProvider.notifier)
+            .updateNotificationEnabled(enabled: false);
+        await container
+            .read(settingsNotifierProvider.notifier)
+            .updateNotificationEnabled(enabled: true);
+
+        final state = container.read(settingsNotifierProvider).value!;
+        expect(state.notificationsEnabled, true);
+      },
+    );
   });
 }

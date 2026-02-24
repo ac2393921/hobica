@@ -17,11 +17,7 @@ class SettingsPage extends ConsumerWidget {
     final settingsAsync = ref.watch(settingsNotifierProvider);
 
     return Scaffold(
-      headers: const [
-        AppBar(
-          title: Text('設定'),
-        ),
-      ],
+      headers: const [AppBar(title: Text('設定'))],
       child: settingsAsync.when(
         loading: () => const LoadingIndicator(),
         error: (error, _) => ErrorView(
@@ -34,11 +30,12 @@ class SettingsPage extends ConsumerWidget {
             const _SectionHeader(title: 'テーマ'),
             _SettingsListTile(
               icon: BootstrapIcons.moonFill,
-              label: 'ダークモード',
+              label: 'テーマモード',
               trailing: ThemeSwitcher(
-                themeMode: settings.themeMode,
-                onChanged: (mode) =>
-                    ref.read(settingsNotifierProvider.notifier).updateThemeMode(mode),
+                currentMode: settings.themeMode,
+                onChanged: (mode) => ref
+                    .read(settingsNotifierProvider.notifier)
+                    .updateThemeMode(mode),
               ),
             ),
             const _SectionHeader(title: '通知'),
@@ -93,7 +90,6 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
-/// セクション見出しウィジェット。
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title});
 
@@ -114,7 +110,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// アイコン・ラベル・trailing を持つ設定行ウィジェット。
 class _SettingsListTile extends StatelessWidget {
   const _SettingsListTile({
     required this.icon,

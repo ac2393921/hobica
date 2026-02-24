@@ -103,7 +103,7 @@ class RewardDetailPage extends ConsumerWidget {
     final walletBalance = ref.read(walletBalanceProvider).valueOrNull;
     if (walletBalance == null) {
       if (context.mounted) {
-        showDialog(
+        await showDialog<void>(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('交換失敗'),
@@ -128,7 +128,7 @@ class RewardDetailPage extends ConsumerWidget {
       if (context.mounted) context.pop();
     } catch (e) {
       if (context.mounted) {
-        showDialog(
+        await showDialog<void>(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('交換失敗'),

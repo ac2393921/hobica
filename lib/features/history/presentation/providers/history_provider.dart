@@ -1,32 +1,37 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:hobica/core/database/providers/database_provider.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
+import 'package:hobica/features/history/data/repositories/history_repository_impl.dart';
+import 'package:hobica/features/history/domain/repositories/history_repository.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
-import 'package:hobica/mocks/history_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+part 'history_provider.freezed.dart';
 part 'history_provider.g.dart';
 
-@riverpod
-class HistoryHabitLogs extends _$HistoryHabitLogs {
-  @override
-  Future<List<HabitLog>> build() async {
-    return ref.watch(historyRepositoryProvider).fetchHabitLogs();
-  }
-
-  Future<void> refresh() async {
-    ref.invalidateSelf();
-    await future;
-  }
+@freezed
+class HistoryState with _$HistoryState {
+  const factory HistoryState({
+    required List<HabitLog> habitLogs,
+    required List<RewardRedemption> redemptions,
+  }) = _HistoryState;
 }
 
 @riverpod
-class HistoryRedemptions extends _$HistoryRedemptions {
-  @override
-  Future<List<RewardRedemption>> build() async {
-    return ref.watch(historyRepositoryProvider).fetchRedemptions();
-  }
+HistoryRepository historyRepository(HistoryRepositoryRef ref) {
+  return HistoryRepositoryImpl(ref.watch(appDatabaseProvider));
+}
 
-  Future<void> refresh() async {
-    ref.invalidateSelf();
-    await future;
+@riverpod
+class History extends _$History {
+  @override
+  Future<HistoryState> build() async {
+    final repository = ref.watch(historyRepositoryProvider);
+    final habitLogs = await repository.fetchHabitLogs();
+    final redemptions = await repository.fetchRedemptions();
+    return HistoryState(
+      habitLogs: habitLogs,
+      redemptions: redemptions,
+    );
   }
 }
