@@ -1,14 +1,7 @@
-import 'dart:async';
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hobica/core/widgets.dart';
+import 'package:hobica/core/widgets/empty_view.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
-import 'package:hobica/features/history/presentation/providers/history_provider.dart';
-import 'package:hobica/features/history/presentation/widgets/point_history_item.dart';
 import 'package:hobica/features/history/presentation/widgets/point_history_list.dart';
-import 'package:hobica/mocks/history_repository_provider.dart';
-import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 final _testTheme = ThemeData(
@@ -16,35 +9,15 @@ final _testTheme = ThemeData(
   radius: 0.5,
 );
 
-final _sampleLogs = [
-  HabitLog(
-    id: 1,
-    habitId: 1,
-    date: DateTime(2026, 2, 20),
-    points: 30,
-    createdAt: DateTime(2026, 2, 20),
-  ),
-  HabitLog(
-    id: 2,
-    habitId: 2,
-    date: DateTime(2026, 2, 21),
-    points: 50,
-    createdAt: DateTime(2026, 2, 21),
-  ),
-];
-
 Future<void> pumpPointHistoryList(
   WidgetTester tester, {
-  required List<Override> overrides,
+  required List<HabitLog> habitLogs,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
-      overrides: overrides,
-      child: ShadcnApp(
-        theme: _testTheme,
-        home: const Scaffold(
-          child: PointHistoryList(),
-        ),
+    ShadcnApp(
+      theme: _testTheme,
+      home: Scaffold(
+        child: PointHistoryList(habitLogs: habitLogs),
       ),
     ),
   );
@@ -52,74 +25,86 @@ Future<void> pumpPointHistoryList(
 
 void main() {
   group('PointHistoryList', () {
-    testWidgets('データありの場合、PointHistoryItem が表示される', (tester) async {
-      await pumpPointHistoryList(
-        tester,
-        overrides: [
-          historyRepositoryProvider.overrideWith(
-            (_) => MockHistoryRepository(habitLogs: _sampleLogs),
-          ),
-        ],
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byType(PointHistoryItem), findsNWidgets(2));
-    });
-
-    testWidgets('空リストの場合、EmptyView が表示される', (tester) async {
-      await pumpPointHistoryList(
-        tester,
-        overrides: [
-          historyRepositoryProvider.overrideWith(
-            (_) => MockHistoryRepository(habitLogs: []),
-          ),
-        ],
-      );
-      await tester.pumpAndSettle();
+    testWidgets('shows EmptyView when habitLogs is empty', (tester) async {
+      await pumpPointHistoryList(tester, habitLogs: []);
 
       expect(find.byType(EmptyView), findsOneWidget);
-      expect(find.text('ポイント獲得履歴はありません'), findsOneWidget);
+      expect(find.text('ポイント獲得履歴がありません'), findsOneWidget);
     });
 
-    testWidgets('ローディング中は LoadingIndicator が表示される', (tester) async {
-      await pumpPointHistoryList(
-        tester,
-        overrides: [
-          pointHistoryProvider.overrideWith(() => _NeverResolvingPointHistory()),
-        ],
-      );
-      await tester.pump();
+    testWidgets('shows date header for each group', (tester) async {
+      final logs = [
+        HabitLog(
+          id: 1,
+          habitId: 1,
+          date: DateTime(2026, 2, 20),
+          points: 30,
+          createdAt: DateTime(2026, 2, 20),
+        ),
+      ];
 
-      expect(find.byType(LoadingIndicator), findsOneWidget);
+      await pumpPointHistoryList(tester, habitLogs: logs);
+
+      expect(find.text('2026年2月20日'), findsOneWidget);
     });
 
-    testWidgets('エラー時は ErrorView が表示される', (tester) async {
-      await pumpPointHistoryList(
-        tester,
-        overrides: [
-          pointHistoryProvider.overrideWith(
-            () => _ThrowingPointHistory(),
-          ),
-        ],
-      );
-      await tester.pumpAndSettle();
+    testWidgets('shows points with + prefix for each log', (tester) async {
+      final logs = [
+        HabitLog(
+          id: 1,
+          habitId: 1,
+          date: DateTime(2026, 2, 20),
+          points: 30,
+          createdAt: DateTime(2026, 2, 20),
+        ),
+      ];
 
-      expect(find.byType(ErrorView), findsOneWidget);
-      expect(find.text('ポイント履歴の取得に失敗しました'), findsOneWidget);
+      await pumpPointHistoryList(tester, habitLogs: logs);
+
+      expect(find.text('+30pt'), findsOneWidget);
+    });
+
+    testWidgets('groups logs by date into separate sections', (tester) async {
+      final logs = [
+        HabitLog(
+          id: 1,
+          habitId: 1,
+          date: DateTime(2026, 2, 20),
+          points: 30,
+          createdAt: DateTime(2026, 2, 20),
+        ),
+        HabitLog(
+          id: 2,
+          habitId: 2,
+          date: DateTime(2026, 2, 21),
+          points: 50,
+          createdAt: DateTime(2026, 2, 21),
+        ),
+      ];
+
+      await pumpPointHistoryList(tester, habitLogs: logs);
+
+      expect(find.text('2026年2月20日'), findsOneWidget);
+      expect(find.text('2026年2月21日'), findsOneWidget);
+      expect(find.text('+30pt'), findsOneWidget);
+      expect(find.text('+50pt'), findsOneWidget);
+    });
+
+    testWidgets('does not show EmptyView when habitLogs is not empty',
+        (tester) async {
+      final logs = [
+        HabitLog(
+          id: 1,
+          habitId: 1,
+          date: DateTime(2026, 2, 20),
+          points: 30,
+          createdAt: DateTime(2026, 2, 20),
+        ),
+      ];
+
+      await pumpPointHistoryList(tester, habitLogs: logs);
+
+      expect(find.byType(EmptyView), findsNothing);
     });
   });
-}
-
-class _ThrowingPointHistory extends PointHistory {
-  @override
-  Future<List<HabitLog>> build() async {
-    throw Exception('fetch error');
-  }
-}
-
-class _NeverResolvingPointHistory extends PointHistory {
-  @override
-  Future<List<HabitLog>> build() {
-    return Completer<List<HabitLog>>().future;
-  }
 }

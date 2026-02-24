@@ -1,14 +1,7 @@
-import 'dart:async';
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hobica/core/widgets.dart';
-import 'package:hobica/features/history/presentation/providers/history_provider.dart';
-import 'package:hobica/features/history/presentation/widgets/redemption_history_item.dart';
+import 'package:hobica/core/widgets/empty_view.dart';
 import 'package:hobica/features/history/presentation/widgets/redemption_history_list.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
-import 'package:hobica/mocks/history_repository_provider.dart';
-import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 final _testTheme = ThemeData(
@@ -16,33 +9,15 @@ final _testTheme = ThemeData(
   radius: 0.5,
 );
 
-final _sampleRedemptions = [
-  RewardRedemption(
-    id: 1,
-    rewardId: 1,
-    pointsSpent: 100,
-    redeemedAt: DateTime(2026, 2, 1),
-  ),
-  RewardRedemption(
-    id: 2,
-    rewardId: 2,
-    pointsSpent: 200,
-    redeemedAt: DateTime(2026, 2, 5),
-  ),
-];
-
 Future<void> pumpRedemptionHistoryList(
   WidgetTester tester, {
-  required List<Override> overrides,
+  required List<RewardRedemption> redemptions,
 }) async {
   await tester.pumpWidget(
-    ProviderScope(
-      overrides: overrides,
-      child: ShadcnApp(
-        theme: _testTheme,
-        home: const Scaffold(
-          child: RedemptionHistoryList(),
-        ),
+    ShadcnApp(
+      theme: _testTheme,
+      home: Scaffold(
+        child: RedemptionHistoryList(redemptions: redemptions),
       ),
     ),
   );
@@ -50,76 +25,83 @@ Future<void> pumpRedemptionHistoryList(
 
 void main() {
   group('RedemptionHistoryList', () {
-    testWidgets('データありの場合、RedemptionHistoryItem が表示される', (tester) async {
-      await pumpRedemptionHistoryList(
-        tester,
-        overrides: [
-          historyRepositoryProvider.overrideWith(
-            (_) => MockHistoryRepository(redemptions: _sampleRedemptions),
-          ),
-        ],
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byType(RedemptionHistoryItem), findsNWidgets(2));
-    });
-
-    testWidgets('空リストの場合、EmptyView が表示される', (tester) async {
-      await pumpRedemptionHistoryList(
-        tester,
-        overrides: [
-          historyRepositoryProvider.overrideWith(
-            (_) => MockHistoryRepository(redemptions: []),
-          ),
-        ],
-      );
-      await tester.pumpAndSettle();
+    testWidgets('shows EmptyView when redemptions is empty', (tester) async {
+      await pumpRedemptionHistoryList(tester, redemptions: []);
 
       expect(find.byType(EmptyView), findsOneWidget);
-      expect(find.text('交換履歴はありません'), findsOneWidget);
+      expect(find.text('交換履歴がありません'), findsOneWidget);
     });
 
-    testWidgets('ローディング中は LoadingIndicator が表示される', (tester) async {
-      await pumpRedemptionHistoryList(
-        tester,
-        overrides: [
-          redemptionHistoryProvider.overrideWith(
-            () => _NeverResolvingRedemptionHistory(),
-          ),
-        ],
-      );
-      await tester.pump();
+    testWidgets('shows date header for each group', (tester) async {
+      final redemptions = [
+        RewardRedemption(
+          id: 1,
+          rewardId: 1,
+          pointsSpent: 100,
+          redeemedAt: DateTime(2026, 2, 1),
+        ),
+      ];
 
-      expect(find.byType(LoadingIndicator), findsOneWidget);
+      await pumpRedemptionHistoryList(tester, redemptions: redemptions);
+
+      expect(find.text('2026年2月1日'), findsOneWidget);
     });
 
-    testWidgets('エラー時は ErrorView が表示される', (tester) async {
-      await pumpRedemptionHistoryList(
-        tester,
-        overrides: [
-          redemptionHistoryProvider.overrideWith(
-            () => _ThrowingRedemptionHistory(),
-          ),
-        ],
-      );
-      await tester.pumpAndSettle();
+    testWidgets('shows points with - prefix for each redemption',
+        (tester) async {
+      final redemptions = [
+        RewardRedemption(
+          id: 1,
+          rewardId: 1,
+          pointsSpent: 100,
+          redeemedAt: DateTime(2026, 2, 1),
+        ),
+      ];
 
-      expect(find.byType(ErrorView), findsOneWidget);
-      expect(find.text('交換履歴の取得に失敗しました'), findsOneWidget);
+      await pumpRedemptionHistoryList(tester, redemptions: redemptions);
+
+      expect(find.text('-100pt'), findsOneWidget);
+    });
+
+    testWidgets('groups redemptions by date into separate sections',
+        (tester) async {
+      final redemptions = [
+        RewardRedemption(
+          id: 1,
+          rewardId: 1,
+          pointsSpent: 100,
+          redeemedAt: DateTime(2026, 2, 1),
+        ),
+        RewardRedemption(
+          id: 2,
+          rewardId: 2,
+          pointsSpent: 200,
+          redeemedAt: DateTime(2026, 2, 5),
+        ),
+      ];
+
+      await pumpRedemptionHistoryList(tester, redemptions: redemptions);
+
+      expect(find.text('2026年2月1日'), findsOneWidget);
+      expect(find.text('2026年2月5日'), findsOneWidget);
+      expect(find.text('-100pt'), findsOneWidget);
+      expect(find.text('-200pt'), findsOneWidget);
+    });
+
+    testWidgets('does not show EmptyView when redemptions is not empty',
+        (tester) async {
+      final redemptions = [
+        RewardRedemption(
+          id: 1,
+          rewardId: 1,
+          pointsSpent: 100,
+          redeemedAt: DateTime(2026, 2, 1),
+        ),
+      ];
+
+      await pumpRedemptionHistoryList(tester, redemptions: redemptions);
+
+      expect(find.byType(EmptyView), findsNothing);
     });
   });
-}
-
-class _ThrowingRedemptionHistory extends RedemptionHistory {
-  @override
-  Future<List<RewardRedemption>> build() async {
-    throw Exception('fetch error');
-  }
-}
-
-class _NeverResolvingRedemptionHistory extends RedemptionHistory {
-  @override
-  Future<List<RewardRedemption>> build() {
-    return Completer<List<RewardRedemption>>().future;
-  }
 }
