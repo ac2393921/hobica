@@ -8,6 +8,7 @@ import 'package:hobica/features/history/presentation/pages/history_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
+import 'package:hobica/features/settings/presentation/pages/settings_page.dart';
 
 import 'routes.dart';
 
@@ -206,7 +207,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.settings,
               name: AppRouteNames.settings,
-              builder: (context, state) => const _PlaceholderPage(title: '設定'),
+              builder: (context, state) => const SettingsPage(),
               routes: [
                 GoRoute(
                   path: 'premium',
