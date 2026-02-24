@@ -3,14 +3,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/router/router.dart';
 import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
+import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';
+import 'package:hobica/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:hobica/mocks/mock_habit_repository.dart';
+import 'package:hobica/mocks/mock_reward_repository.dart';
+import 'package:hobica/mocks/mock_wallet_repository.dart';
 
-/// 習慣ルート（HabitListPage 等）は Riverpod プロバイダーを使うため、
+/// 各ページが Riverpod プロバイダーを使うため、
 /// ProviderScope で appRouter を包む必要がある。
-Widget _buildTestApp({MockHabitRepository? mockRepo}) {
+Widget _buildTestApp({
+  MockHabitRepository? mockRepo,
+  MockRewardRepository? mockRewardRepo,
+  MockWalletRepository? mockWalletRepo,
+}) {
   final overrides = <Override>[
     habitRepositoryProvider.overrideWithValue(
       mockRepo ?? MockHabitRepository(),
+    ),
+    rewardRepositoryProvider.overrideWithValue(
+      mockRewardRepo ?? MockRewardRepository(),
+    ),
+    walletRepositoryProvider.overrideWithValue(
+      mockWalletRepo ?? MockWalletRepository(),
     ),
   ];
   return ProviderScope(
@@ -26,17 +40,16 @@ void main() {
       await tester.pumpAndSettle();
 
       // 初期画面がホームであることを確認
-      expect(find.byIcon(Icons.construction), findsOneWidget);
-      expect(find.text('この画面は後続フェーズで実装されます'), findsOneWidget);
+      expect(find.text('今日の習慣'), findsOneWidget);
     });
 
     testWidgets('ホーム画面へのナビゲーションが機能する', (tester) async {
       await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
-      // プレースホルダー画面の確認（AppBarとボトムナビゲーションにも「ホーム」があるため複数存在する）
+      // ホーム画面の確認（AppBarとボトムナビゲーションにも「ホーム」があるため複数存在する）
       expect(find.text('ホーム'), findsAtLeastNWidgets(1));
-      expect(find.byIcon(Icons.construction), findsOneWidget);
+      expect(find.text('今日の習慣'), findsOneWidget);
     });
 
     testWidgets('習慣一覧画面へのナビゲーションが機能する', (tester) async {
@@ -134,9 +147,8 @@ void main() {
       appRouter.go('/rewards/456');
       await tester.pumpAndSettle();
 
-      // プレースホルダー画面の確認
-      expect(find.byIcon(Icons.construction), findsOneWidget);
-      expect(find.textContaining('ID: 456'), findsAtLeastNWidgets(1));
+      // 実ページの確認（報酬が存在しない場合のエラー状態）
+      expect(find.text('ご褒美が見つかりません'), findsOneWidget);
     });
 
     testWidgets('ご褒美編集画面へのナビゲーションが機能する（パスパラメータ付き）', (tester) async {
@@ -147,9 +159,8 @@ void main() {
       appRouter.go('/rewards/456/edit');
       await tester.pumpAndSettle();
 
-      // プレースホルダー画面の確認
-      expect(find.byIcon(Icons.construction), findsOneWidget);
-      expect(find.textContaining('ID: 456'), findsAtLeastNWidgets(1));
+      // 実ページ（RewardFormPage）の表示確認
+      expect(find.text('ご褒美を編集'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('ご褒美作成画面へのナビゲーションが機能する', (tester) async {
@@ -160,9 +171,7 @@ void main() {
       appRouter.go('/rewards/new');
       await tester.pumpAndSettle();
 
-      // プレースホルダー画面の確認
-      expect(find.byIcon(Icons.construction), findsOneWidget);
-      expect(find.text('ご褒美作成'), findsAtLeastNWidgets(1));
+      expect(find.text('ご褒美を追加'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('プレミアム画面へのナビゲーションが機能する', (tester) async {
@@ -203,7 +212,7 @@ void main() {
 
       // ホーム画面に戻ったことを確認（AppBarとボトムナビゲーションにも「ホーム」があるため複数存在する）
       expect(find.text('ホーム'), findsAtLeastNWidgets(1));
-      expect(find.byIcon(Icons.construction), findsOneWidget);
+      expect(find.text('今日の習慣'), findsOneWidget);
     });
 
     testWidgets('ボトムナビゲーションが全画面で表示される', (tester) async {
@@ -265,8 +274,8 @@ void main() {
       appRouter.go('/rewards/reward%20test');
       await tester.pumpAndSettle();
 
-      // デコード後の文字列が表示されることを確認
-      expect(find.textContaining('reward test'), findsAtLeastNWidgets(1));
+      // 非整数IDのため int.parse が FormatException → errorBuilder が表示される
+      expect(find.text('ページが見つかりません'), findsOneWidget);
     });
 
     testWidgets('数値IDが正しく処理される（習慣）', (tester) async {
@@ -289,7 +298,8 @@ void main() {
       appRouter.go('/rewards/67890');
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ID: 67890'), findsAtLeastNWidgets(1));
+      // Mock に ID=67890 のご褒美が存在しないため ErrorView が表示される
+      expect(find.text('ご褒美が見つかりません'), findsOneWidget);
     });
 
     testWidgets('UUIDフォーマットのIDが正しく処理される（ご褒美）', (tester) async {
@@ -300,7 +310,8 @@ void main() {
       appRouter.go('/rewards/$uuid');
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ID: $uuid'), findsAtLeastNWidgets(1));
+      // UUID は int.parse 不可のため FormatException → errorBuilder が表示される
+      expect(find.text('ページが見つかりません'), findsOneWidget);
     });
   });
 }

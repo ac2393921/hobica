@@ -4,6 +4,7 @@ import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_detail_page.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_form_page.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_list_page.dart';
+import 'package:hobica/features/home/presentation/pages/home_page.dart';
 import 'package:hobica/features/history/presentation/pages/history_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
@@ -112,7 +113,7 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.home,
               name: AppRouteNames.home,
-              builder: (context, state) => const _PlaceholderPage(title: 'ホーム'),
+              builder: (context, state) => const HomePage(),
             ),
           ],
         ),
