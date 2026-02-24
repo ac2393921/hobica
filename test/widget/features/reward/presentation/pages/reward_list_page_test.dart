@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hobica/core/widgets/empty_view.dart';
 import 'package:hobica/core/widgets/loading_indicator.dart';
-import 'package:hobica/features/reward/domain/models/reward.dart';
 import 'package:hobica/features/reward/domain/models/reward_category.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
 import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';

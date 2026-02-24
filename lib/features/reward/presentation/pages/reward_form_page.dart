@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart' as flutter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hobica/core/utils/validators.dart';
@@ -23,7 +24,7 @@ class RewardFormPage extends ConsumerStatefulWidget {
 }
 
 class _RewardFormPageState extends ConsumerState<RewardFormPage> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = flutter.GlobalKey<flutter.FormState>();
   final _titleController = TextEditingController();
   final _pointsController = TextEditingController();
   final _memoController = TextEditingController();
@@ -131,7 +132,7 @@ class _RewardFormPageState extends ConsumerState<RewardFormPage> {
       ],
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Form(
+        child: flutter.Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,10 +235,10 @@ class _TitleField extends StatelessWidget {
       children: [
         const Text('タイトル'),
         const SizedBox(height: 4),
-        TextFormField(
+        flutter.TextFormField(
           controller: controller,
           validator: Validators.validateTitle,
-          decoration: const InputDecoration(
+          decoration: const flutter.InputDecoration(
             hintText: 'ご褒美のタイトルを入力',
           ),
         ),
@@ -258,11 +259,11 @@ class _PointsField extends StatelessWidget {
       children: [
         const Text('必要ポイント'),
         const SizedBox(height: 4),
-        TextFormField(
+        flutter.TextFormField(
           controller: controller,
-          keyboardType: TextInputType.number,
+          keyboardType: flutter.TextInputType.number,
           validator: Validators.validatePoints,
-          decoration: const InputDecoration(
+          decoration: const flutter.InputDecoration(
             hintText: '例: 300',
           ),
         ),
@@ -327,10 +328,10 @@ class _MemoField extends StatelessWidget {
       children: [
         const Text('メモ（任意）'),
         const SizedBox(height: 4),
-        TextFormField(
+        flutter.TextFormField(
           controller: controller,
           maxLines: 3,
-          decoration: const InputDecoration(
+          decoration: const flutter.InputDecoration(
             hintText: 'メモを入力（任意）',
           ),
         ),

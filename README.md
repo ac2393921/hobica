@@ -21,7 +21,7 @@ hobicaは、習慣継続のモチベーション維持と衝動買い抑制を�
 - **Framework**: Flutter 3.27.x
 - **Language**: Dart 3.6.x
 - **State Management**: Riverpod 2.x
-- **Database**: Isar 3.x (NoSQL)
+- **Database**: Drift 2.x (SQLite)
 - **Routing**: go_router 14.x
 - **UI Components**: shadcn_flutter (84+ components)
 
@@ -56,38 +56,24 @@ fvm install 3.27.0
 fvm use 3.27.0
 ```
 
-### 3. Flutterプロジェクトの作成
-
-**重要**: 現在のディレクトリには設定ファイルのみが存在します。
-以下のコマンドでFlutterプロジェクトの骨組みを生成してください。
-
-```bash
-# プロジェクトを作成（既存の設定ファイルは保持されます）
-fvm flutter create --org com.hobica --platforms ios,android .
-
-# または、FVMを使わない場合
-flutter create --org com.hobica --platforms ios,android .
-```
-
-**注意**:
-- プロジェクト作成時、既存の `pubspec.yaml`, `.gitignore`, `.fvmrc` は上書きされません
-- `pubspec.yaml` が上書きされた場合は、Gitで元に戻してください: `git checkout pubspec.yaml`
-
-### 4. 依存パッケージのインストール
+### 3. 依存パッケージのインストール
 
 ```bash
 fvm flutter pub get
 ```
 
-### 5. コード生成
+### 4. コード生成
 
-freezed, json_serializable, isar のコード生成を実行:
+drift, freezed, riverpod_generator, json_serializable のコード生成を実行します。
+
+> **重要**: `*.g.dart` / `*.freezed.dart` はGit管理対象外です（`.gitignore` で除外）。
+> クローン直後・モデル変更後は**必ずこのステップを実行**してください。実行しないとビルドが失敗します。
 
 ```bash
 fvm dart run build_runner build --delete-conflicting-outputs
 ```
 
-### 6. 実行
+### 5. 実行
 
 ```bash
 # iOSシミュレータで実行
@@ -104,7 +90,8 @@ fvm flutter run
 
 ### コード生成
 
-モデルやプロバイダーを変更した場合は、コード生成を実行:
+モデル・プロバイダー・データベーススキーマを変更した場合は、コード生成を実行してください。
+生成された `*.g.dart` / `*.freezed.dart` はGit管理対象外のため、各開発者が手元で生成する必要があります。
 
 ```bash
 # 通常のコード生成
@@ -170,6 +157,32 @@ lib/
 ```
 
 詳細なアーキテクチャは [DESIGN.md](docs/DESIGN.md) を参照してください。
+
+## コード生成物の管理方針
+
+### 方針: 生成物はGit管理対象外
+
+`*.g.dart` / `*.freezed.dart` / `*.config.dart` は `.gitignore` により追跡されません。
+
+**理由:**
+- drift / freezed / riverpod_generator の生成物は数百〜数千行に及びPRのノイズになる
+- マージコンフリクトが頻発する（特に `app_database.g.dart`）
+- 生成物はソースから完全に再現可能であり、コミットする意義がない
+
+### 必須タイミング
+
+以下のタイミングで `fvm dart run build_runner build --delete-conflicting-outputs` を実行してください:
+
+| タイミング | 理由 |
+|-----------|------|
+| リポジトリのクローン直後 | 生成物が存在しないため |
+| `@freezed` / `@riverpod` / `@DriftDatabase` アノテーション付きファイルの変更後 | 生成物が古くなるため |
+| ブランチ切り替え後（生成対象ファイルが変化した場合） | 生成物とソースの不一致を防ぐため |
+
+### CI での扱い
+
+GitHub Actions CI が `build_runner` を自動実行します。
+生成物のコミット漏れではなく「`build_runner` が正常完了するか」「解析・テストが通るか」を検証します。
 
 ## トラブルシューティング
 
