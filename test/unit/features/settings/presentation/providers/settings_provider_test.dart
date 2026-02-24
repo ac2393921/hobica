@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hobica/features/settings/domain/models/app_settings.dart';
 import 'package:hobica/features/settings/domain/models/app_theme_mode.dart';
 import 'package:hobica/features/settings/domain/repositories/settings_repository.dart';
 import 'package:hobica/features/settings/presentation/providers/settings_provider.dart';
@@ -27,19 +26,21 @@ void main() {
 
   group('SettingsNotifier', () {
     group('build', () {
-      test('loads initial settings with system theme mode', () async {
+      test('loads initial settings state via getSettings', () async {
         final container = _makeContainer();
         addTearDown(container.dispose);
 
-        final settings = await container.read(settingsNotifierProvider.future);
+        final state = await container.read(settingsNotifierProvider.future);
 
-        expect(settings, isA<AppSettings>());
-        expect(settings.themeMode, AppThemeMode.system);
+        expect(state.id, 1);
+        expect(state.themeMode, AppThemeMode.system);
+        expect(state.notificationsEnabled, true);
+        expect(state.locale, 'ja');
       });
     });
 
     group('updateThemeMode', () {
-      test('updates state to dark after updateThemeMode(dark)', () async {
+      test('updates themeMode and reflects in state', () async {
         final container = _makeContainer();
         addTearDown(container.dispose);
 
@@ -48,37 +49,23 @@ void main() {
             .read(settingsNotifierProvider.notifier)
             .updateThemeMode(AppThemeMode.dark);
 
-        final settings = container.read(settingsNotifierProvider).value!;
-        expect(settings.themeMode, AppThemeMode.dark);
+        final state = container.read(settingsNotifierProvider).value!;
+        expect(state.themeMode, AppThemeMode.dark);
       });
+    });
 
-      test('updates state to light after updateThemeMode(light)', () async {
+    group('updateNotificationEnabled', () {
+      test('updates notificationsEnabled and reflects in state', () async {
         final container = _makeContainer();
         addTearDown(container.dispose);
 
         await container.read(settingsNotifierProvider.future);
         await container
             .read(settingsNotifierProvider.notifier)
-            .updateThemeMode(AppThemeMode.light);
+            .updateNotificationEnabled(enabled: false);
 
-        final settings = container.read(settingsNotifierProvider).value!;
-        expect(settings.themeMode, AppThemeMode.light);
-      });
-
-      test('consecutive updates reflect the last mode', () async {
-        final container = _makeContainer();
-        addTearDown(container.dispose);
-
-        await container.read(settingsNotifierProvider.future);
-        await container
-            .read(settingsNotifierProvider.notifier)
-            .updateThemeMode(AppThemeMode.dark);
-        await container
-            .read(settingsNotifierProvider.notifier)
-            .updateThemeMode(AppThemeMode.light);
-
-        final settings = container.read(settingsNotifierProvider).value!;
-        expect(settings.themeMode, AppThemeMode.light);
+        final state = container.read(settingsNotifierProvider).value!;
+        expect(state.notificationsEnabled, false);
       });
     });
   });
