@@ -32,13 +32,16 @@ Future<void> pumpRewardListPage(
   MockRewardRepository? rewardRepo,
   MockWalletRepository? walletRepo,
 }) async {
+  // 常にモックを提供することでappDatabaseProviderへの依存を回避する
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        if (rewardRepo != null)
-          rewardRepositoryProvider.overrideWithValue(rewardRepo),
-        if (walletRepo != null)
-          walletRepositoryProvider.overrideWithValue(walletRepo),
+        rewardRepositoryProvider.overrideWithValue(
+          rewardRepo ?? MockRewardRepository(),
+        ),
+        walletRepositoryProvider.overrideWithValue(
+          walletRepo ?? MockWalletRepository(),
+        ),
       ],
       child: ShadcnApp.router(
         theme: _testTheme,

@@ -1,9 +1,9 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:hobica/core/database/providers/database_provider.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
+import 'package:hobica/features/history/data/repositories/history_repository_impl.dart';
 import 'package:hobica/features/history/domain/repositories/history_repository.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
-import 'package:hobica/mocks/fixtures.dart';
-import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'history_provider.freezed.dart';
@@ -18,12 +18,8 @@ class HistoryState with _$HistoryState {
 }
 
 @riverpod
-// ignore: deprecated_member_use_from_same_package
 HistoryRepository historyRepository(HistoryRepositoryRef ref) {
-  return MockHistoryRepository(
-    habitLogs: List.of(mockHabitLogs),
-    redemptions: List.of(mockRedemptions),
-  );
+  return HistoryRepositoryImpl(ref.watch(appDatabaseProvider));
 }
 
 @riverpod

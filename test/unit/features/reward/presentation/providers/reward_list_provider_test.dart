@@ -2,22 +2,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';
+import 'package:hobica/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:hobica/mocks/mock_reward_repository.dart';
+import 'package:hobica/mocks/mock_wallet_repository.dart';
 
-ProviderContainer _makeContainer(MockRewardRepository repo) {
+ProviderContainer _makeContainer(
+  MockRewardRepository repo, {
+  MockWalletRepository? wallet,
+}) {
   return ProviderContainer(
-    overrides: [rewardRepositoryProvider.overrideWithValue(repo)],
+    overrides: [
+      rewardRepositoryProvider.overrideWithValue(repo),
+      walletRepositoryProvider.overrideWithValue(wallet ?? MockWalletRepository()),
+    ],
   );
 }
 
 void main() {
   group('rewardRepositoryProvider', () {
-    test('provides a RewardRepository instance', () {
+    test('requires appDatabaseProvider override for default usage', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      final repo = container.read(rewardRepositoryProvider);
-      expect(repo, isNotNull);
+      expect(
+        () => container.read(rewardRepositoryProvider),
+        throwsA(isA<UnimplementedError>()),
+      );
     });
   });
 
@@ -33,7 +43,9 @@ void main() {
 
     test('redeemReward succeeds with sufficient points', () async {
       final repo = MockRewardRepository();
-      final container = _makeContainer(repo);
+      final mockWallet = MockWalletRepository();
+      await mockWallet.addPoints(500);
+      final container = _makeContainer(repo, wallet: mockWallet);
       addTearDown(container.dispose);
 
       await repo.createReward(title: 'ケーキ', targetPoints: 300);

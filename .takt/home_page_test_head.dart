@@ -7,13 +7,13 @@ import 'package:hobica/features/home/presentation/widgets/today_habits_section.d
 import 'package:hobica/features/home/presentation/widgets/top_rewards_section.dart';
 import 'package:hobica/features/reward/presentation/widgets/reward_card.dart';
 import 'package:hobica/features/wallet/presentation/providers/wallet_provider.dart';
-import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
-import 'package:hobica/features/history/presentation/providers/history_provider.dart';
-import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';
+import 'package:hobica/mocks/habit_repository_provider.dart';
+import 'package:hobica/mocks/history_repository_provider.dart';
 import 'package:hobica/mocks/mock_habit_repository.dart';
 import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:hobica/mocks/mock_reward_repository.dart';
 import 'package:hobica/mocks/mock_wallet_repository.dart';
+import 'package:hobica/mocks/reward_repository_provider.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 final _testTheme = ThemeData(
@@ -21,6 +21,7 @@ final _testTheme = ThemeData(
   radius: 0.5,
 );
 
+/// ProviderScope + ShadcnApp で HomePage をポンプするヘルパー関数。
 Future<void> pumpHomePage(
   WidgetTester tester, {
   MockHabitRepository? mockHabitRepo,
