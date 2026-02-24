@@ -1,15 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hobica/core/database/providers/database_provider.dart';
+import 'package:hobica/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:hobica/features/settings/domain/models/app_settings.dart';
 import 'package:hobica/features/settings/domain/models/app_theme_mode.dart';
 import 'package:hobica/features/settings/domain/repositories/settings_repository.dart';
-import 'package:hobica/mocks/mock_settings_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'settings_provider.g.dart';
 
 @riverpod
 SettingsRepository settingsRepository(SettingsRepositoryRef ref) {
-  return MockSettingsRepository();
+  return SettingsRepositoryImpl(ref.watch(appDatabaseProvider));
 }
 
 @riverpod

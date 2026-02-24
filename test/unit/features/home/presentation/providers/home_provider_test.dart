@@ -2,13 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
 import 'package:hobica/features/home/presentation/providers/home_provider.dart';
+import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
+import 'package:hobica/features/history/presentation/providers/history_provider.dart';
+import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';
 import 'package:hobica/mocks/fixtures.dart';
-import 'package:hobica/mocks/habit_repository_provider.dart';
-import 'package:hobica/mocks/history_repository_provider.dart';
 import 'package:hobica/mocks/mock_habit_repository.dart';
 import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:hobica/mocks/mock_reward_repository.dart';
-import 'package:hobica/mocks/reward_repository_provider.dart';
 
 void main() {
   late MockHabitRepository mockHabitRepo;

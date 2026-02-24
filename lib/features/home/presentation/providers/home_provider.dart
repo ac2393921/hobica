@@ -1,9 +1,9 @@
 import 'package:hobica/core/utils/date_utils.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
+import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
+import 'package:hobica/features/history/presentation/providers/history_provider.dart';
 import 'package:hobica/features/reward/domain/models/reward.dart';
-import 'package:hobica/mocks/habit_repository_provider.dart';
-import 'package:hobica/mocks/history_repository_provider.dart';
-import 'package:hobica/mocks/reward_repository_provider.dart';
+import 'package:hobica/features/reward/presentation/providers/reward_list_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'home_provider.g.dart';

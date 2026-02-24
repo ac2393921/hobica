@@ -45,12 +45,14 @@ void main() {
   });
 
   group('historyRepositoryProvider', () {
-    test('returns MockHistoryRepository with fixtures by default', () {
+    test('requires appDatabaseProvider override for default usage', () {
       final defaultContainer = ProviderContainer();
       addTearDown(defaultContainer.dispose);
 
-      final repo = defaultContainer.read(historyRepositoryProvider);
-      expect(repo, isA<MockHistoryRepository>());
+      expect(
+        () => defaultContainer.read(historyRepositoryProvider),
+        throwsA(isA<UnimplementedError>()),
+      );
     });
   });
 

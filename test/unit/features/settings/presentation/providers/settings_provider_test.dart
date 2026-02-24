@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/features/settings/domain/models/app_theme_mode.dart';
-import 'package:hobica/features/settings/domain/repositories/settings_repository.dart';
 import 'package:hobica/features/settings/presentation/providers/settings_provider.dart';
 import 'package:hobica/mocks/mock_settings_repository.dart';
 
@@ -15,12 +14,14 @@ ProviderContainer _makeContainer() {
 
 void main() {
   group('settingsRepositoryProvider', () {
-    test('provides a SettingsRepository instance', () {
+    test('requires appDatabaseProvider override for default usage', () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      final repo = container.read(settingsRepositoryProvider);
-      expect(repo, isA<SettingsRepository>());
+      expect(
+        () => container.read(settingsRepositoryProvider),
+        throwsA(isA<UnimplementedError>()),
+      );
     });
   });
 
