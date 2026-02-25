@@ -74,6 +74,15 @@ class AppSettingsTable extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 }
 
+@DataClassName('PremiumStatusRow')
+class PremiumStatuses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  BoolColumn get isPremium => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get premiumExpiresAt => dateTime().nullable()();
+  TextColumn get purchaseToken => text().nullable()();
+  DateTimeColumn get updatedAt => dateTime()();
+}
+
 @DriftDatabase(tables: [
   Habits,
   HabitLogs,
@@ -81,6 +90,7 @@ class AppSettingsTable extends Table {
   RewardRedemptions,
   Wallets,
   AppSettingsTable,
+  PremiumStatuses,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
