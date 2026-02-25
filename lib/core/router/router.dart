@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_detail_page.dart';
@@ -11,13 +10,17 @@ import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dar
 import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
 import 'package:hobica/features/settings/presentation/pages/settings_page.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import 'routes.dart';
 
+const double _infoIconSize = 64;
+const double _infoTitleSpacing = 16;
+const double _infoSubtitleSpacing = 8;
+const double _infoButtonSpacing = 24;
 /// ボトムナビゲーション付きシェル
 ///
-/// 5つのタブを持つボトムナビゲーションを実装。
-/// フェーズ12.2でshadcn_flutterのTabsコンポーネントに置き換え予定。
+/// 5つのタブを持つshadcn_flutter NavigationBarを実装。
 class _ScaffoldWithNavBar extends StatelessWidget {
   const _ScaffoldWithNavBar({required this.child});
 
@@ -26,22 +29,36 @@ class _ScaffoldWithNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _calculateSelectedIndex(context),
-        onTap: (index) => _onItemTapped(index, context),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_circle), label: '習慣'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.card_giftcard),
-            label: 'ご褒美',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: '履歴'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: '設定'),
-        ],
-      ),
+      footers: [
+        NavigationBar(
+          index: _calculateSelectedIndex(context),
+          onSelected: (index) => _onItemTapped(index, context),
+          labelType: NavigationLabelType.all,
+          children: const [
+            NavigationButton(
+              label: Text('ホーム'),
+              child: Icon(BootstrapIcons.house),
+            ),
+            NavigationButton(
+              label: Text('習慣'),
+              child: Icon(BootstrapIcons.checkCircle),
+            ),
+            NavigationButton(
+              label: Text('ご褒美'),
+              child: Icon(BootstrapIcons.gift),
+            ),
+            NavigationButton(
+              label: Text('履歴'),
+              child: Icon(BootstrapIcons.clockHistory),
+            ),
+            NavigationButton(
+              label: Text('設定'),
+              child: Icon(BootstrapIcons.gear),
+            ),
+          ],
+        ),
+      ],
+      child: child,
     );
   }
 
@@ -192,29 +209,35 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
   ],
-  errorBuilder: (context, state) => Scaffold(
-    appBar: AppBar(title: const Text('エラー')),
-    body: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          Text('ページが見つかりません', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(
-            state.uri.toString(),
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => context.go(AppRoutes.home),
-            child: const Text('ホームに戻る'),
-          ),
-        ],
+  errorBuilder: (context, state) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      headers: const [AppBar(title: Text('エラー'))],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              BootstrapIcons.exclamationCircle,
+              size: _infoIconSize,
+              color: theme.colorScheme.destructive,
+            ),
+            const SizedBox(height: _infoTitleSpacing),
+            Text('ページが見つかりません', style: theme.typography.h4),
+            const SizedBox(height: _infoSubtitleSpacing),
+            Text(
+              state.uri.toString(),
+              style: TextStyle(color: theme.colorScheme.mutedForeground),
+            ),
+            const SizedBox(height: _infoButtonSpacing),
+            Button.primary(
+              onPressed: () => context.go(AppRoutes.home),
+              child: const Text('ホームに戻る'),
+            ),
+          ],
+        ),
       ),
-    ),
-  ),
+    );
+  },
 );
