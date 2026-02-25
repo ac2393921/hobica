@@ -29,8 +29,9 @@ class SettingsNotifier extends _$SettingsNotifier {
 
   Future<void> updateNotificationEnabled({required bool enabled}) async {
     final repository = ref.read(settingsRepositoryProvider);
-    final settings =
-        await repository.updateNotificationEnabled(enabled: enabled);
+    final settings = await repository.updateNotificationEnabled(
+      enabled: enabled,
+    );
     state = AsyncValue.data(settings);
   }
 }
