@@ -3,30 +3,26 @@ import 'package:hobica/core/database/app_database.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
 import 'package:hobica/core/utils/date_utils.dart';
+import 'package:hobica/features/habit/data/datasources/habit_local_data_source.dart';
 import 'package:hobica/features/habit/domain/models/frequency_type.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
 import 'package:hobica/features/habit/domain/repositories/habit_repository.dart';
 
 class HabitRepositoryImpl implements HabitRepository {
-  const HabitRepositoryImpl(this._db);
+  const HabitRepositoryImpl(this._dataSource);
 
-  final AppDatabase _db;
+  final HabitLocalDataSource _dataSource;
 
   @override
   Future<List<Habit>> fetchAllHabits() async {
-    final rows = await (
-      _db.select(_db.habits)..where((t) => t.isActive.equals(true))
-    ).get();
+    final rows = await _dataSource.fetchActiveHabits();
     return rows.map(_rowToHabit).toList();
   }
 
   @override
   Future<Habit?> fetchHabitById(int id) async {
-    final row = await (
-      _db.select(_db.habits)
-        ..where((t) => t.id.equals(id) & t.isActive.equals(true))
-    ).getSingleOrNull();
+    final row = await _dataSource.fetchActiveHabitById(id);
     return row == null ? null : _rowToHabit(row);
   }
 
@@ -49,16 +45,16 @@ class HabitRepositoryImpl implements HabitRepository {
       );
     }
 
-    final row = await _db.into(_db.habits).insertReturning(
-          HabitsCompanion.insert(
-            title: title,
-            points: points,
-            frequencyType: frequencyType.name,
-            frequencyValue: frequencyValue,
-            remindTime: Value(remindTime),
-            createdAt: DateTime.now(),
-          ),
-        );
+    final row = await _dataSource.insertHabit(
+      HabitsCompanion.insert(
+        title: title,
+        points: points,
+        frequencyType: frequencyType.name,
+        frequencyValue: frequencyValue,
+        remindTime: Value(remindTime),
+        createdAt: DateTime.now(),
+      ),
+    );
     return Result.success(_rowToHabit(row));
   }
 
@@ -75,10 +71,8 @@ class HabitRepositoryImpl implements HabitRepository {
       );
     }
 
-    final count = await (
-      _db.update(_db.habits)
-        ..where((t) => t.id.equals(habit.id) & t.isActive.equals(true))
-    ).write(
+    final count = await _dataSource.updateActiveHabit(
+      habit.id,
       HabitsCompanion(
         title: Value(habit.title),
         points: Value(habit.points),
@@ -95,10 +89,7 @@ class HabitRepositoryImpl implements HabitRepository {
 
   @override
   Future<Result<void, AppError>> deleteHabit(int id) async {
-    final count = await (
-      _db.update(_db.habits)
-        ..where((t) => t.id.equals(id) & t.isActive.equals(true))
-    ).write(const HabitsCompanion(isActive: Value(false)));
+    final count = await _dataSource.softDeleteHabit(id);
     if (count == 0) {
       return const Result.failure(AppError.notFound('習慣が見つかりません'));
     }
@@ -107,37 +98,36 @@ class HabitRepositoryImpl implements HabitRepository {
 
   @override
   Future<List<HabitLog>> fetchHabitLogs() async {
-    final rows = await _db.select(_db.habitLogs).get();
+    final rows = await _dataSource.fetchAllLogs();
     return rows.map(_rowToHabitLog).toList();
   }
 
   @override
   Future<Result<HabitLog, AppError>> completeHabit(int habitId) async {
-    final habit = await (
-      _db.select(_db.habits)
-        ..where((t) => t.id.equals(habitId) & t.isActive.equals(true))
-    ).getSingleOrNull();
+    final habit = await _dataSource.fetchActiveHabitById(habitId);
     if (habit == null) {
       return const Result.failure(AppError.notFound('習慣が見つかりません'));
     }
 
     final today = DateTime.now().toDate();
-    final existing = await (
-      _db.select(_db.habitLogs)
-        ..where((t) => t.habitId.equals(habitId) & t.date.equals(today))
-    ).getSingleOrNull();
+    final existing = await _dataSource.fetchLogByHabitIdAndDate(
+      habitId,
+      today,
+    );
     if (existing != null) {
-      return const Result.failure(AppError.alreadyCompleted('本日は既に完了済みです'));
+      return const Result.failure(
+        AppError.alreadyCompleted('本日は既に完了済みです'),
+      );
     }
 
-    final row = await _db.into(_db.habitLogs).insertReturning(
-          HabitLogsCompanion.insert(
-            habitId: habitId,
-            date: today,
-            points: habit.points,
-            createdAt: DateTime.now(),
-          ),
-        );
+    final row = await _dataSource.insertLog(
+      HabitLogsCompanion.insert(
+        habitId: habitId,
+        date: today,
+        points: habit.points,
+        createdAt: DateTime.now(),
+      ),
+    );
     return Result.success(_rowToHabitLog(row));
   }
 

@@ -1,16 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/app.dart';
+import 'package:hobica/features/habit/presentation/providers/habit_list_provider.dart';
 import 'package:hobica/features/settings/domain/models/app_theme_mode.dart';
+import 'package:hobica/mocks/mock_habit_repository.dart';
 import 'package:hobica/mocks/mock_overrides.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 void main() {
+  final allTestOverrides = [
+    habitRepositoryProvider.overrideWithValue(MockHabitRepository()),
+    ...mockRepositoryOverrides,
+  ];
+
   group('HobicaApp', () {
     testWidgets('アプリが正常に起動する', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: mockRepositoryOverrides,
+          overrides: allTestOverrides,
           child: const HobicaApp(),
         ),
       );
@@ -21,7 +28,7 @@ void main() {
     testWidgets('ShadcnApp.routerを使用している', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: mockRepositoryOverrides,
+          overrides: allTestOverrides,
           child: const HobicaApp(),
         ),
       );
@@ -32,7 +39,7 @@ void main() {
     testWidgets('モックRepository使用時にデータベースエラーが発生しない', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: mockRepositoryOverrides,
+          overrides: allTestOverrides,
           child: const HobicaApp(),
         ),
       );

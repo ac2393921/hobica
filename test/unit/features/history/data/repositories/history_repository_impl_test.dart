@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/database/app_database.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
+import 'package:hobica/features/habit/data/datasources/habit_local_data_source.dart';
 import 'package:hobica/features/habit/data/repositories/habit_repository_impl.dart';
 import 'package:hobica/features/habit/domain/models/frequency_type.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
@@ -24,7 +25,7 @@ void main() {
   setUp(() {
     db = _createInMemoryDb();
     repo = HistoryRepositoryImpl(db);
-    habitRepo = HabitRepositoryImpl(db);
+    habitRepo = HabitRepositoryImpl(HabitLocalDataSource(db));
     rewardRepo = RewardRepositoryImpl(db);
     walletRepo = WalletRepositoryImpl(db);
   });
