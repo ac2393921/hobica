@@ -26,37 +26,47 @@ void main() {
   });
 
   group('SettingsNotifier', () {
-    group('build', () {
-      test('loads initial settings state via getSettings', () async {
-        final container = _makeContainer();
-        addTearDown(container.dispose);
+    test('build loads initial settings state via getSettings', () async {
+      final container = _makeContainer();
+      addTearDown(container.dispose);
 
-        final state = await container.read(settingsNotifierProvider.future);
+      final state = await container.read(settingsNotifierProvider.future);
 
-        expect(state.id, 1);
-        expect(state.themeMode, AppThemeMode.system);
-        expect(state.notificationsEnabled, true);
-        expect(state.locale, 'ja');
-      });
+      expect(state.id, 1);
+      expect(state.themeMode, AppThemeMode.system);
+      expect(state.notificationsEnabled, true);
+      expect(state.locale, 'ja');
     });
 
-    group('updateThemeMode', () {
-      test('updates themeMode and reflects in state', () async {
-        final container = _makeContainer();
-        addTearDown(container.dispose);
+    test('updateThemeMode updates themeMode to dark', () async {
+      final container = _makeContainer();
+      addTearDown(container.dispose);
 
-        await container.read(settingsNotifierProvider.future);
-        await container
-            .read(settingsNotifierProvider.notifier)
-            .updateThemeMode(AppThemeMode.dark);
+      await container.read(settingsNotifierProvider.future);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .updateThemeMode(AppThemeMode.dark);
 
-        final state = container.read(settingsNotifierProvider).value!;
-        expect(state.themeMode, AppThemeMode.dark);
-      });
+      final state = container.read(settingsNotifierProvider).value!;
+      expect(state.themeMode, AppThemeMode.dark);
     });
 
-    group('updateNotificationEnabled', () {
-      test('updates notificationsEnabled and reflects in state', () async {
+    test('updateThemeMode updates themeMode to light', () async {
+      final container = _makeContainer();
+      addTearDown(container.dispose);
+
+      await container.read(settingsNotifierProvider.future);
+      await container
+          .read(settingsNotifierProvider.notifier)
+          .updateThemeMode(AppThemeMode.light);
+
+      final state = container.read(settingsNotifierProvider).value!;
+      expect(state.themeMode, AppThemeMode.light);
+    });
+
+    test(
+      'updateNotificationEnabled updates notificationsEnabled to false',
+      () async {
         final container = _makeContainer();
         addTearDown(container.dispose);
 
@@ -67,7 +77,26 @@ void main() {
 
         final state = container.read(settingsNotifierProvider).value!;
         expect(state.notificationsEnabled, false);
-      });
-    });
+      },
+    );
+
+    test(
+      'updateNotificationEnabled updates notificationsEnabled to true',
+      () async {
+        final container = _makeContainer();
+        addTearDown(container.dispose);
+
+        await container.read(settingsNotifierProvider.future);
+        await container
+            .read(settingsNotifierProvider.notifier)
+            .updateNotificationEnabled(enabled: false);
+        await container
+            .read(settingsNotifierProvider.notifier)
+            .updateNotificationEnabled(enabled: true);
+
+        final state = container.read(settingsNotifierProvider).value!;
+        expect(state.notificationsEnabled, true);
+      },
+    );
   });
 }
