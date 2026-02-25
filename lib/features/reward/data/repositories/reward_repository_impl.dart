@@ -2,30 +2,26 @@ import 'package:drift/drift.dart';
 import 'package:hobica/core/database/app_database.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
+import 'package:hobica/features/reward/data/datasources/reward_local_datasource.dart';
 import 'package:hobica/features/reward/domain/models/reward.dart';
 import 'package:hobica/features/reward/domain/models/reward_category.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
 import 'package:hobica/features/reward/domain/repositories/reward_repository.dart';
 
 class RewardRepositoryImpl implements RewardRepository {
-  const RewardRepositoryImpl(this._db);
+  const RewardRepositoryImpl(this._dataSource);
 
-  final AppDatabase _db;
+  final RewardLocalDataSource _dataSource;
 
   @override
   Future<List<Reward>> fetchAllRewards() async {
-    final rows = await (
-      _db.select(_db.rewards)..where((t) => t.isActive.equals(true))
-    ).get();
+    final rows = await _dataSource.fetchAllActive();
     return rows.map(_rowToReward).toList();
   }
 
   @override
   Future<Reward?> fetchRewardById(int id) async {
-    final row = await (
-      _db.select(_db.rewards)
-        ..where((t) => t.id.equals(id) & t.isActive.equals(true))
-    ).getSingleOrNull();
+    final row = await _dataSource.fetchActiveById(id);
     return row == null ? null : _rowToReward(row);
   }
 
@@ -37,25 +33,20 @@ class RewardRepositoryImpl implements RewardRepository {
     RewardCategory? category,
     String? memo,
   }) async {
-    final row = await _db.into(_db.rewards).insertReturning(
-          RewardsCompanion.insert(
-            title: title,
-            targetPoints: targetPoints,
-            imageUri: Value(imageUri),
-            category: Value(category?.name),
-            memo: Value(memo),
-            createdAt: DateTime.now(),
-          ),
-        );
+    final row = await _dataSource.insert(
+      title: title,
+      targetPoints: targetPoints,
+      imageUri: imageUri,
+      category: category?.name,
+      memo: memo,
+    );
     return Result.success(_rowToReward(row));
   }
 
   @override
   Future<Result<Reward, AppError>> updateReward(Reward reward) async {
-    final count = await (
-      _db.update(_db.rewards)
-        ..where((t) => t.id.equals(reward.id) & t.isActive.equals(true))
-    ).write(
+    final count = await _dataSource.update(
+      reward.id,
       RewardsCompanion(
         title: Value(reward.title),
         imageUri: Value(reward.imageUri),
@@ -74,10 +65,7 @@ class RewardRepositoryImpl implements RewardRepository {
 
   @override
   Future<Result<void, AppError>> deleteReward(int id) async {
-    final count = await (
-      _db.update(_db.rewards)
-        ..where((t) => t.id.equals(id) & t.isActive.equals(true))
-    ).write(const RewardsCompanion(isActive: Value(false)));
+    final count = await _dataSource.softDelete(id);
     if (count == 0) {
       return Result.failure(
         AppError.notFound('ご褒美が見つかりません（id: $id）'),
@@ -91,10 +79,7 @@ class RewardRepositoryImpl implements RewardRepository {
     int rewardId,
     int currentPoints,
   ) async {
-    final reward = await (
-      _db.select(_db.rewards)
-        ..where((t) => t.id.equals(rewardId) & t.isActive.equals(true))
-    ).getSingleOrNull();
+    final reward = await _dataSource.fetchActiveById(rewardId);
     if (reward == null) {
       return Result.failure(
         AppError.notFound('ご褒美が見つかりません（id: $rewardId）'),
@@ -109,13 +94,10 @@ class RewardRepositoryImpl implements RewardRepository {
       );
     }
 
-    final row = await _db.into(_db.rewardRedemptions).insertReturning(
-          RewardRedemptionsCompanion.insert(
-            rewardId: rewardId,
-            pointsSpent: reward.targetPoints,
-            redeemedAt: DateTime.now(),
-          ),
-        );
+    final row = await _dataSource.insertRedemption(
+      rewardId: rewardId,
+      pointsSpent: reward.targetPoints,
+    );
     return Result.success(_rowToRedemption(row));
   }
 
