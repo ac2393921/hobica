@@ -5,6 +5,7 @@ import 'package:hobica/features/habit/presentation/pages/habit_form_page.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_list_page.dart';
 import 'package:hobica/features/history/presentation/pages/history_page.dart';
 import 'package:hobica/features/home/presentation/pages/home_page.dart';
+import 'package:hobica/features/monetization/presentation/pages/premium_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
@@ -17,42 +18,6 @@ const double _infoIconSize = 64;
 const double _infoTitleSpacing = 16;
 const double _infoSubtitleSpacing = 8;
 const double _infoButtonSpacing = 24;
-
-/// プレースホルダー画面
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      headers: [AppBar(title: Text(title))],
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              BootstrapIcons.tools,
-              size: _infoIconSize,
-              color: theme.colorScheme.mutedForeground,
-            ),
-            const SizedBox(height: _infoTitleSpacing),
-            Text(title, style: theme.typography.h4),
-            const SizedBox(height: _infoSubtitleSpacing),
-            Text(
-              'この画面は後続フェーズで実装されます',
-              style: TextStyle(color: theme.colorScheme.mutedForeground),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// ボトムナビゲーション付きシェル
 ///
 /// 5つのタブを持つshadcn_flutter NavigationBarを実装。
@@ -235,8 +200,7 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'premium',
                   name: AppRouteNames.premium,
-                  builder: (context, state) =>
-                      const _PlaceholderPage(title: 'プレミアム'),
+                  builder: (context, state) => const PremiumPage(),
                 ),
               ],
             ),
