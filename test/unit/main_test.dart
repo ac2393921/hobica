@@ -14,7 +14,6 @@ import 'package:hobica/features/settings/domain/repositories/settings_repository
 import 'package:hobica/features/settings/presentation/providers/settings_provider.dart';
 import 'package:hobica/features/wallet/domain/repositories/wallet_repository.dart';
 import 'package:hobica/features/wallet/presentation/providers/wallet_provider.dart';
-import 'package:hobica/mocks/mock_habit_repository.dart';
 import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:hobica/mocks/mock_overrides.dart';
 import 'package:hobica/mocks/mock_settings_repository.dart';
@@ -22,33 +21,19 @@ import 'package:hobica/mocks/mock_wallet_repository.dart';
 
 void main() {
   group('mockRepositoryOverrides', () {
-    test('全4つのRepositoryプロバイダーをオーバーライドする', () {
-      expect(mockRepositoryOverrides, hasLength(4));
+    test('全3つのRepositoryプロバイダーをオーバーライドする', () {
+      expect(mockRepositoryOverrides, hasLength(3));
     });
 
     test('モックRepositoryがProviderScopeで正しく注入される', () {
-      final container = ProviderContainer(
-        overrides: mockRepositoryOverrides,
-      );
+      final container = ProviderContainer(overrides: mockRepositoryOverrides);
       addTearDown(container.dispose);
-
-      expect(
-        container.read(habitRepositoryProvider),
-        isA<MockHabitRepository>(),
-      );
-      expect(
-        container.read(habitRepositoryProvider),
-        isA<HabitRepository>(),
-      );
 
       expect(
         container.read(walletRepositoryProvider),
         isA<MockWalletRepository>(),
       );
-      expect(
-        container.read(walletRepositoryProvider),
-        isA<WalletRepository>(),
-      );
+      expect(container.read(walletRepositoryProvider), isA<WalletRepository>());
 
       expect(
         container.read(historyRepositoryProvider),
@@ -69,28 +54,30 @@ void main() {
       );
     });
 
-    test('appDatabaseProviderを使用しない', () {
-      final container = ProviderContainer(
-        overrides: mockRepositoryOverrides,
-      );
+    test('モック対象3つはappDatabaseProviderなしでも動作する', () {
+      final container = ProviderContainer(overrides: mockRepositoryOverrides);
       addTearDown(container.dispose);
 
-      expect(
-        () => container.read(habitRepositoryProvider),
-        returnsNormally,
+      expect(() => container.read(walletRepositoryProvider), returnsNormally);
+      expect(() => container.read(historyRepositoryProvider), returnsNormally);
+      expect(() => container.read(settingsRepositoryProvider), returnsNormally);
+    });
+
+    test('appDatabaseProvider経由でhabitRepositoryが動作する', () {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          ...mockRepositoryOverrides,
+        ],
       );
-      expect(
-        () => container.read(walletRepositoryProvider),
-        returnsNormally,
-      );
-      expect(
-        () => container.read(historyRepositoryProvider),
-        returnsNormally,
-      );
-      expect(
-        () => container.read(settingsRepositoryProvider),
-        returnsNormally,
-      );
+      addTearDown(() async {
+        container.dispose();
+        await db.close();
+      });
+
+      final repo = container.read(habitRepositoryProvider);
+      expect(repo, isA<HabitRepository>());
     });
 
     test('appDatabaseProvider経由でrewardRepositoryが動作する', () {
