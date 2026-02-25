@@ -7,6 +7,7 @@ import 'package:hobica/features/habit/data/repositories/habit_repository_impl.da
 import 'package:hobica/features/habit/domain/models/frequency_type.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/history/data/repositories/history_repository_impl.dart';
+import 'package:hobica/features/reward/data/datasources/reward_local_datasource.dart';
 import 'package:hobica/features/reward/data/repositories/reward_repository_impl.dart';
 import 'package:hobica/features/reward/domain/models/reward.dart';
 import 'package:hobica/features/wallet/data/repositories/wallet_repository_impl.dart';
@@ -25,7 +26,7 @@ void main() {
     db = _createInMemoryDb();
     repo = HistoryRepositoryImpl(db);
     habitRepo = HabitRepositoryImpl(db);
-    rewardRepo = RewardRepositoryImpl(db);
+    rewardRepo = RewardRepositoryImpl(RewardLocalDataSource(db));
     walletRepo = WalletRepositoryImpl(db);
   });
 

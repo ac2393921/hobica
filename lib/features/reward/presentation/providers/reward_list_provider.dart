@@ -1,4 +1,5 @@
 import 'package:hobica/core/database/providers/database_provider.dart';
+import 'package:hobica/features/reward/data/datasources/reward_local_datasource.dart';
 import 'package:hobica/features/reward/data/repositories/reward_repository_impl.dart';
 import 'package:hobica/features/reward/domain/models/reward.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
@@ -10,8 +11,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'reward_list_provider.g.dart';
 
 @riverpod
+RewardLocalDataSource rewardLocalDataSource(RewardLocalDataSourceRef ref) {
+  return RewardLocalDataSource(ref.watch(appDatabaseProvider));
+}
+
+@riverpod
 RewardRepository rewardRepository(RewardRepositoryRef ref) {
-  return RewardRepositoryImpl(ref.watch(appDatabaseProvider));
+  return RewardRepositoryImpl(ref.watch(rewardLocalDataSourceProvider));
 }
 
 @riverpod
