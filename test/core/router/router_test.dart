@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/router/router.dart';
@@ -12,6 +11,7 @@ import 'package:hobica/mocks/mock_history_repository.dart';
 import 'package:hobica/mocks/mock_reward_repository.dart';
 import 'package:hobica/mocks/mock_settings_repository.dart';
 import 'package:hobica/mocks/mock_wallet_repository.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 /// 各ページが Riverpod プロバイダーを使うため、
 /// ProviderScope で appRouter を包む必要がある。
@@ -39,7 +39,13 @@ Widget _buildTestApp({
   ];
   return ProviderScope(
     overrides: overrides,
-    child: MaterialApp.router(routerConfig: appRouter),
+    child: ShadcnApp.router(
+      routerConfig: appRouter,
+      theme: ThemeData(
+        colorScheme: ColorSchemes.slate(ThemeMode.light),
+        radius: 0.5,
+      ),
+    ),
   );
 }
 
@@ -186,7 +192,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ページが見つかりません'), findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+      expect(find.byIcon(BootstrapIcons.exclamationCircle), findsOneWidget);
       expect(find.text('ホームに戻る'), findsOneWidget);
     });
 
@@ -209,16 +215,16 @@ void main() {
       await tester.pumpWidget(_buildTestApp());
       await tester.pumpAndSettle();
 
-      expect(find.byType(BottomNavigationBar), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
 
-      final bottomNav = find.byType(BottomNavigationBar);
-      expect(bottomNav, findsOneWidget);
+      final navBar = find.byType(NavigationBar);
+      expect(navBar, findsOneWidget);
 
-      expect(find.descendant(of: bottomNav, matching: find.text('ホーム')), findsOneWidget);
-      expect(find.descendant(of: bottomNav, matching: find.text('習慣')), findsOneWidget);
-      expect(find.descendant(of: bottomNav, matching: find.text('ご褒美')), findsOneWidget);
-      expect(find.descendant(of: bottomNav, matching: find.text('履歴')), findsOneWidget);
-      expect(find.descendant(of: bottomNav, matching: find.text('設定')), findsOneWidget);
+      expect(find.descendant(of: navBar, matching: find.text('ホーム')), findsOneWidget);
+      expect(find.descendant(of: navBar, matching: find.text('習慣')), findsOneWidget);
+      expect(find.descendant(of: navBar, matching: find.text('ご褒美')), findsOneWidget);
+      expect(find.descendant(of: navBar, matching: find.text('履歴')), findsOneWidget);
+      expect(find.descendant(of: navBar, matching: find.text('設定')), findsOneWidget);
     });
 
     testWidgets('現在のタブがハイライトされる', (tester) async {
@@ -226,18 +232,18 @@ void main() {
       await tester.pumpWidget(_buildTestApp(mockRepo: mockRepo));
       await tester.pumpAndSettle();
 
-      final bottomNav = tester.widget<BottomNavigationBar>(
-        find.byType(BottomNavigationBar),
+      final navBar = tester.widget<NavigationBar>(
+        find.byType(NavigationBar),
       );
-      expect(bottomNav.currentIndex, 0);
+      expect(navBar.index, 0);
 
       await tester.tap(find.text('習慣'));
       await tester.pumpAndSettle();
 
-      final updatedBottomNav = tester.widget<BottomNavigationBar>(
-        find.byType(BottomNavigationBar),
+      final updatedNavBar = tester.widget<NavigationBar>(
+        find.byType(NavigationBar),
       );
-      expect(updatedBottomNav.currentIndex, 1);
+      expect(updatedNavBar.index, 1);
     });
   });
 
