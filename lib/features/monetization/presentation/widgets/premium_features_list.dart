@@ -1,6 +1,5 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-/// Immutable data class representing a single premium feature.
 class PremiumFeatureItem {
   const PremiumFeatureItem({
     required this.title,
@@ -13,84 +12,113 @@ class PremiumFeatureItem {
   final IconData icon;
 }
 
-/// Displays a list of premium features.
-///
-/// Renders each [PremiumFeatureItem] as a Card with icon, title, and
-/// description. Data is received via props; no data fetching is performed.
 class PremiumFeaturesList extends StatelessWidget {
-  const PremiumFeaturesList({
-    required this.features,
-    super.key,
-  });
+  const PremiumFeaturesList({this.features = defaultFeatures, super.key});
 
-  static const double _cardSpacing = 8.0;
-  static const double _cardPadding = 12.0;
-  static const double _iconSize = 24.0;
-  static const double _iconTextSpacing = 12.0;
-  static const double _titleDescriptionSpacing = 4.0;
+  static const String sectionTitle = 'プレミアム機能';
+  static const String emptyMessage = 'プレミアム機能はありません';
+
+  static const List<PremiumFeatureItem> defaultFeatures = [
+    PremiumFeatureItem(
+      title: '習慣・ご褒美 無制限',
+      description: '習慣とご褒美の登録数制限がなくなります',
+      icon: BootstrapIcons.infinity,
+    ),
+    PremiumFeatureItem(
+      title: '広告なし',
+      description: 'アプリ内の広告を非表示にします',
+      icon: BootstrapIcons.eyeSlash,
+    ),
+    PremiumFeatureItem(
+      title: 'テーマ・デザインカスタマイズ',
+      description: '見た目を好みに合わせて変更できます',
+      icon: BootstrapIcons.palette,
+    ),
+    PremiumFeatureItem(
+      title: '週/月レポート',
+      description: '行動ログを週次・月次で振り返れます',
+      icon: BootstrapIcons.graphUp,
+    ),
+    PremiumFeatureItem(
+      title: 'データバックアップ',
+      description: 'データをバックアップして復元できます',
+      icon: BootstrapIcons.cloudArrowUp,
+    ),
+    PremiumFeatureItem(
+      title: 'ウィジェット（今後追加）',
+      description: 'ホーム画面ウィジェット機能を提供予定です',
+      icon: BootstrapIcons.phone,
+    ),
+  ];
+
+  static const double _contentPadding = 16;
+  static const double _sectionSpacing = 12;
+  static const double _itemSpacing = 8;
+  static const double _iconSize = 16;
+  static const double _iconTextSpacing = 8;
+  static const double _titleDescriptionSpacing = 2;
 
   final List<PremiumFeatureItem> features;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('プレミアム機能'),
-        if (features.isEmpty)
-          const Text('プレミアム機能はありません')
-        else
-          ..._buildFeatureCards(context),
-      ],
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(_contentPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(sectionTitle),
+            const SizedBox(height: _sectionSpacing),
+            if (features.isEmpty)
+              const Text(emptyMessage)
+            else
+              for (var i = 0; i < features.length; i++) ...[
+                _FeatureRow(
+                  feature: features[i],
+                  mutedForeground: theme.colorScheme.mutedForeground,
+                ),
+                if (i < features.length - 1)
+                  const SizedBox(height: _itemSpacing),
+              ],
+          ],
+        ),
+      ),
     );
   }
+}
 
-  List<Widget> _buildFeatureCards(BuildContext context) {
-    final theme = Theme.of(context);
-    final items = <Widget>[];
+class _FeatureRow extends StatelessWidget {
+  const _FeatureRow({required this.feature, required this.mutedForeground});
 
-    for (var i = 0; i < features.length; i++) {
-      final feature = features[i];
-      items.add(
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(_cardPadding),
-            child: Row(
-              children: [
-                Icon(
-                  feature.icon,
-                  size: _iconSize,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: _iconTextSpacing),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        feature.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: _titleDescriptionSpacing),
-                      Text(
-                        feature.description,
-                        style: TextStyle(
-                          color: theme.colorScheme.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+  final PremiumFeatureItem feature;
+  final Color mutedForeground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(feature.icon, size: PremiumFeaturesList._iconSize),
+        const SizedBox(width: PremiumFeaturesList._iconTextSpacing),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(feature.title),
+              const SizedBox(
+                height: PremiumFeaturesList._titleDescriptionSpacing,
+              ),
+              Text(
+                feature.description,
+                style: TextStyle(color: mutedForeground),
+              ),
+            ],
           ),
         ),
-      );
-      if (i < features.length - 1) {
-        items.add(const SizedBox(height: _cardSpacing));
-      }
-    }
-
-    return items;
+      ],
+    );
   }
 }

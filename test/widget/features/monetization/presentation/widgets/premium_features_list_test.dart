@@ -7,7 +7,7 @@ final _testTheme = ThemeData(
   radius: 0.5,
 );
 
-const _testFeatures = [
+const _customFeatures = [
   PremiumFeatureItem(
     title: '広告非表示',
     description: '全ての広告を非表示にします',
@@ -18,23 +18,20 @@ const _testFeatures = [
     description: '習慣の詳細な統計データを表示します',
     icon: BootstrapIcons.graphUp,
   ),
-  PremiumFeatureItem(
-    title: 'テーマカスタマイズ',
-    description: 'アプリのテーマを自由に変更できます',
-    icon: BootstrapIcons.palette,
-  ),
 ];
 
-Future<void> pumpPremiumFeaturesList(
+Future<void> _pumpPremiumFeaturesList(
   WidgetTester tester, {
-  required List<PremiumFeatureItem> features,
+  List<PremiumFeatureItem>? features,
 }) async {
   await tester.pumpWidget(
     ShadcnApp(
       theme: _testTheme,
       home: Scaffold(
         child: SingleChildScrollView(
-          child: PremiumFeaturesList(features: features),
+          child: PremiumFeaturesList(
+            features: features ?? PremiumFeaturesList.defaultFeatures,
+          ),
         ),
       ),
     ),
@@ -43,57 +40,51 @@ Future<void> pumpPremiumFeaturesList(
 
 void main() {
   group('PremiumFeaturesList', () {
-    testWidgets('should display all feature titles', (tester) async {
-      await pumpPremiumFeaturesList(tester, features: _testFeatures);
+    testWidgets('displays section title', (tester) async {
+      await _pumpPremiumFeaturesList(tester);
+
+      expect(find.text(PremiumFeaturesList.sectionTitle), findsOneWidget);
+    });
+
+    testWidgets('displays default feature titles and descriptions', (
+      tester,
+    ) async {
+      await _pumpPremiumFeaturesList(tester);
+
+      for (final feature in PremiumFeaturesList.defaultFeatures) {
+        expect(find.text(feature.title), findsOneWidget);
+        expect(find.text(feature.description), findsOneWidget);
+      }
+    });
+
+    testWidgets('is wrapped in a Card', (tester) async {
+      await _pumpPremiumFeaturesList(tester);
+
+      expect(find.byType(Card), findsOneWidget);
+    });
+
+    testWidgets('renders custom features', (tester) async {
+      await _pumpPremiumFeaturesList(tester, features: _customFeatures);
 
       expect(find.text('広告非表示'), findsOneWidget);
-      expect(find.text('詳細統計'), findsOneWidget);
-      expect(find.text('テーマカスタマイズ'), findsOneWidget);
-    });
-
-    testWidgets('should display all feature descriptions', (tester) async {
-      await pumpPremiumFeaturesList(tester, features: _testFeatures);
-
       expect(find.text('全ての広告を非表示にします'), findsOneWidget);
+      expect(find.text('詳細統計'), findsOneWidget);
       expect(find.text('習慣の詳細な統計データを表示します'), findsOneWidget);
-      expect(find.text('アプリのテーマを自由に変更できます'), findsOneWidget);
-    });
-
-    testWidgets('should display icons for each feature', (tester) async {
-      await pumpPremiumFeaturesList(tester, features: _testFeatures);
-
       expect(find.byIcon(BootstrapIcons.eyeSlash), findsOneWidget);
       expect(find.byIcon(BootstrapIcons.graphUp), findsOneWidget);
-      expect(find.byIcon(BootstrapIcons.palette), findsOneWidget);
     });
 
-    testWidgets('should display section header', (tester) async {
-      await pumpPremiumFeaturesList(tester, features: _testFeatures);
+    testWidgets('shows empty message when features list is empty', (
+      tester,
+    ) async {
+      await _pumpPremiumFeaturesList(tester, features: const []);
 
-      expect(find.text('プレミアム機能'), findsOneWidget);
-    });
-
-    testWidgets('should show empty message when features list is empty',
-        (tester) async {
-      await pumpPremiumFeaturesList(tester, features: const []);
-
-      expect(find.text('プレミアム機能はありません'), findsOneWidget);
-    });
-
-    testWidgets('should render a single feature correctly', (tester) async {
-      await pumpPremiumFeaturesList(
-        tester,
-        features: [_testFeatures[0]],
-      );
-
-      expect(find.text('広告非表示'), findsOneWidget);
-      expect(find.text('全ての広告を非表示にします'), findsOneWidget);
-      expect(find.byIcon(BootstrapIcons.eyeSlash), findsOneWidget);
+      expect(find.text(PremiumFeaturesList.emptyMessage), findsOneWidget);
     });
   });
 
   group('PremiumFeatureItem', () {
-    test('should store title, description, and icon', () {
+    test('stores title, description, and icon', () {
       const item = PremiumFeatureItem(
         title: 'テスト機能',
         description: 'テスト説明',

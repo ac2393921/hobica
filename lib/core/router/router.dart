@@ -4,45 +4,15 @@ import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_detail_page.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_form_page.dart';
 import 'package:hobica/features/habit/presentation/pages/habit_list_page.dart';
-import 'package:hobica/features/home/presentation/pages/home_page.dart';
 import 'package:hobica/features/history/presentation/pages/history_page.dart';
+import 'package:hobica/features/home/presentation/pages/home_page.dart';
+import 'package:hobica/features/monetization/presentation/pages/premium_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_detail_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_form_page.dart';
 import 'package:hobica/features/reward/presentation/pages/reward_list_page.dart';
 import 'package:hobica/features/settings/presentation/pages/settings_page.dart';
 
 import 'routes.dart';
-
-/// プレースホルダー画面
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.construction, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(
-              'この画面は後続フェーズで実装されます',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// ボトムナビゲーション付きシェル
 ///
@@ -213,8 +183,7 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'premium',
                   name: AppRouteNames.premium,
-                  builder: (context, state) =>
-                      const _PlaceholderPage(title: 'プレミアム'),
+                  builder: (context, state) => const PremiumPage(),
                 ),
               ],
             ),
