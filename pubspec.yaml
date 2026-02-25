@@ -90,15 +90,9 @@ flutter:
 
   # Fonts (shadcn_flutter will provide default typography)
 
-# flutter_native_splash configuration is commented out until actual splash images are provided
-# Uncomment and configure when splash_logo.png and splash_logo_dark.png are added to assets/images/
-# flutter_native_splash:
-#   color: "#ffffff"
-#   color_dark: "#000000"
-#   image: assets/images/splash_logo.png
-#   image_dark: assets/images/splash_logo_dark.png
-#   android_12:
-#     color: "#ffffff"
-#     color_dark: "#000000"
-#     image: assets/images/splash_logo.png
-#     image_dark: assets/images/splash_logo_dark.png
+flutter_native_splash:
+  color: "#ffffff"
+  color_dark: "#000000"
+  android_12:
+    color: "#ffffff"
+    color_dark: "#000000"
