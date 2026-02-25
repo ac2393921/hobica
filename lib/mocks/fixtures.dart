@@ -2,6 +2,7 @@ import 'package:hobica/features/habit/domain/models/frequency_type.dart';
 import 'package:hobica/features/habit/domain/models/habit.dart';
 import 'package:hobica/features/habit/domain/models/habit_log.dart';
 import 'package:hobica/features/monetization/domain/models/premium_status.dart';
+import 'package:hobica/features/notification/domain/models/notification_schedule.dart';
 import 'package:hobica/features/reward/domain/models/reward.dart';
 import 'package:hobica/features/reward/domain/models/reward_category.dart';
 import 'package:hobica/features/reward/domain/models/reward_redemption.dart';
@@ -102,6 +103,15 @@ final mockPremiumStatus = PremiumStatus(
   isPremium: false,
   updatedAt: _baseDate,
 );
+
+final mockNotificationSchedules = List<NotificationSchedule>.unmodifiable([
+  NotificationSchedule(
+    id: 1,
+    habitId: 1,
+    habitTitle: '読書 30分',
+    scheduledTime: DateTime(2026, 2, 1, 8),
+  ),
+]);
 
 class HabitFixtures {
   HabitFixtures._();
