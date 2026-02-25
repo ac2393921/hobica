@@ -7,11 +7,10 @@ import 'package:hobica/mocks/mock_overrides.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final db = AppDatabase();
   runApp(
     ProviderScope(
       overrides: [
-        appDatabaseProvider.overrideWithValue(db),
+        appDatabaseProvider.overrideWithValue(AppDatabase()),
         ...mockRepositoryOverrides,
       ],
       child: const HobicaApp(),

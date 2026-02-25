@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hobica/core/database/app_database.dart';
 import 'package:hobica/core/errors/app_error.dart';
 import 'package:hobica/core/types/result.dart';
+import 'package:hobica/features/reward/data/datasources/reward_local_datasource.dart';
 import 'package:hobica/features/reward/data/repositories/reward_repository_impl.dart';
 import 'package:hobica/features/reward/domain/models/reward.dart';
 import 'package:hobica/features/reward/domain/models/reward_category.dart';
@@ -13,11 +14,13 @@ AppDatabase _createInMemoryDb() =>
 
 void main() {
   late AppDatabase db;
+  late RewardLocalDataSource dataSource;
   late RewardRepositoryImpl repo;
 
   setUp(() {
     db = _createInMemoryDb();
-    repo = RewardRepositoryImpl(db);
+    dataSource = RewardLocalDataSource(db);
+    repo = RewardRepositoryImpl(dataSource);
   });
 
   tearDown(() async {
